@@ -1,2 +1,5 @@
-# solarpunk-hyprland-rice
-Solarpunk and jungle ispired hyprland rice
+Solarpunk-hyprland-rice
+
+
+
+
