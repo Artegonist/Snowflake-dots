@@ -1,0 +1,150 @@
+{
+    "layer": "top",
+    "position": "top",
+    "width": 1920,
+    "height": 27,
+    "spacing": 7,
+    "modules-left": [
+        "hyprland/workspaces",
+        "cava"
+    ],
+    "modules-center": [
+        "clock"
+    ],
+    "modules-right": [
+        "group/sysinfo",
+        "backlight",
+        "pulseaudio", 
+        "bluetooth",
+        "network",
+        "hyprland/language",
+        "battery"
+    ],
+    "clock": {
+        "format": "{:%H:%M:%S}",
+        "interval": 1,
+        "tooltip": false
+    },	
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟",
+        "format-icons": {
+            "default": ["󰕿", "󰖀", "󰕾"]
+        },
+        "on-click": "qs -c audio-module ipc call audio toggle",
+        "scroll-step": 1,
+        "tooltip": false
+    },
+    "hyprland/workspaces": {
+        "on-click": "activate",
+        "tooltip": false
+    },
+    "hyprland/language": {
+        "format": "{}",
+        "format-en": " EN",
+        "format-ru": " RU",
+        "tooltip": false
+    },
+    "network": {
+        "interface": "wlp0s20f3",
+        "format": "{icon}",
+        "format-wifi": "{icon} {essid}",
+        "format-ethernet": "󰈀 Проводная",
+        "format-disconnected": "󰤭 Нет сети",
+        "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+        "on-click": "nm-connection-editor",
+        "interval": 1,
+        "tooltip": false
+    },
+    "bluetooth": {
+        "format": "󰂯",
+        "format-disabled": "󰂲",
+        "format-off": "󰂲 Off",
+        "format-on": "󰂯 On",
+        "format-connected": "󰂱  {device_alias}",
+        "format-connected-battery": "󰂱  {device_alias} 󰥇 {device_battery_percentage}%",
+        "on-click": "blueman-manager",
+        "interval": 1,
+        "tooltip": false
+    },
+    "cava": {
+        "cava_config": "/home/artegonist/.config/cava/waybar_cava.conf",
+        "input_delay": 2,
+        "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+    }, 
+    "backlight": {
+        "tooltip": false,
+        "format": "{icon} {percent}%",
+        "format-icons": [
+            "󱩎",
+            "󱩏",
+            "󱩐",
+            "󱩑",
+            "󱩒",
+            "󱩓",
+            "󱩔",
+            "󱩕",
+            "󱩖",
+            "󰛨"
+        ],
+    }, 
+    "group/sysinfo": {
+        "orientation": "horizontal",
+        "spacing": 14,
+        "modules": [
+            "temperature",
+            "memory",
+            "cpu"
+        ]
+    },
+    "memory": {
+    	"interval": 1,
+        "tooltip": false,
+    	"format": "{icon} {percentage}%",
+    	"format-icons":[""]
+    },
+    "cpu": {
+    	"interval": 1,
+        "tooltip": false,
+        "format": "{icon} {usage}%",
+        "format-icons":[""]
+    },
+    "temperature": {
+        "interval": 1,
+        "tooltip": false,
+        "hwmon-path": "/sys/class/hwmon/hwmon5/temp1_input",       
+        "format": "{icon} {temperatureC}°",
+        "format-icons": ["","","",""]
+    },
+    "battery": {
+        "tooltip": false,
+        "states": {
+            "warning": 30,
+            "critical": 5
+        },
+        "interval": 1,
+        "tooltip": false,
+        "on-click": "qs -c battery-panel ipc call batteryPanel toggle",
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-full": "󱟢 {capacity}%",
+        "format-warning": "󰂃 {capacity}%",
+        "format-critical": "󱉝 {capacity}%",
+        "format-icons": {
+            "default": [
+                "󰂎",
+                "󰁺",
+                "󰁻",
+                "󰁼",
+                "󰁽",
+                "󰁾",
+                "󰁿",
+                "󰂀",
+                "󰂁",
+                "󰂂",
+                "󰁹"
+            ]
+        },
+        
+    }
+}

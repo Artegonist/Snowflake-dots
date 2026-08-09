@@ -1,0 +1,87 @@
+
+* {
+    font-family: JetBrainsMono Nerd Font;
+    font-size: 18px;
+}
+ 
+window#waybar {
+    background: rgba(27, 36, 28, 0.85);
+    color: #A8C3A0;
+}
+ 
+#workspaces button {
+    background-color: transparent;
+    color: #A8C3A0;
+    border-radius: 10px;
+    padding: 0 8px;
+    transition: all 0.2s ease;
+}
+ 
+#workspaces button.active {
+    background-color: #6E8F72;
+    color: #1B241C;
+}
+ 
+#workspaces button:hover {
+    background-color: #B7D3A8;
+    color: #1B241C;
+}
+ 
+#clock,
+#network,
+#pulseaudio {
+    padding: 0 10px;
+}
+ 
+#workspaces button,
+#cava,
+#clock,
+#backlight,
+#pulseaudio,
+#network,
+#bluetooth,
+#battery {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 18px;
+}
+ 
+#sysinfo {
+    border: 2px solid #6E8F72;
+    border-radius: 10px;
+    padding: 0 3px;
+}
+
+#cava {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 18px;
+    padding: 0 6px;
+    color: #A8C3A0;
+}
+ 
+#sysinfo #memory,
+#sysinfo #cpu,
+#sysinfo #temperature {
+    padding: 0 6px;
+}
+ 
+#temperature {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 15px;
+}
+ 
+#memory {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 15px;
+}
+ 
+#cpu {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 15px;
+}
+
+#language {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 18px;
+    padding: 0 8px;
+}
+
