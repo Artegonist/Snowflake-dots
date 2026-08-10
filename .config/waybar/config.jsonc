@@ -98,19 +98,19 @@
         ]
     },
     "memory": {
-    	"interval": 1,
+    	"interval": 5,
         "tooltip": false,
     	"format": "{icon} {percentage}%",
     	"format-icons":[""]
     },
     "cpu": {
-    	"interval": 1,
+    	"interval": 5,
         "tooltip": false,
         "format": "{icon} {usage}%",
         "format-icons":[""]
     },
     "temperature": {
-        "interval": 1,
+        "interval": 5,
         "tooltip": false,
         "hwmon-path": "/sys/class/hwmon/hwmon5/temp1_input",       
         "format": "{icon} {temperatureC}°",
