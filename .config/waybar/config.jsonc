@@ -48,7 +48,7 @@
     },
     "custom/power": {
         "format":  " ",
-        "on-click": "systemctl poweroff",
+        "on-click": "qs -c power-menu ipc call powermenu toggle",
         "tooltip": false
     },
     "network": {
