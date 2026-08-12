@@ -18,7 +18,7 @@
         "bluetooth",
         "network",
         "hyprland/language",
-        "battery",
+        "custom/battery",
         "custom/power"
     ],
     "clock": {
@@ -122,35 +122,11 @@
         "format": "{icon} {temperatureC}°",
         "format-icons": ["","","",""]
     },
-    "battery": {
-        "tooltip": false,
-        "states": {
-            "warning": 30,
-            "critical": 5
-        },
-        "interval": 1,
-        "tooltip": false,
+    "custom/battery": {
+        "exec": "~/.config/waybar/scripts/battery-watch.sh",
+        "return-type": "json",
         "on-click": "qs -c battery-panel ipc call batteryPanel toggle",
-        "format": "{icon} {capacity}%",
-        "format-charging": "󰂄 {capacity}%",
-        "format-full": "󱟢 {capacity}%",
-        "format-warning": "󰂃 {capacity}%",
-        "format-critical": "󱉝 {capacity}%",
-        "format-icons": {
-            "default": [
-                "󰂎",
-                "󰁺",
-                "󰁻",
-                "󰁼",
-                "󰁽",
-                "󰁾",
-                "󰁿",
-                "󰂀",
-                "󰂁",
-                "󰂂",
-                "󰁹"
-            ]
-        },
-        
+        "restart-interval": 5,
+        "tooltip": false
     }
 }
