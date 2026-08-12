@@ -99,6 +99,39 @@ PanelWindow {
         return "Осталось: " + formatTime(battery.timeToEmpty)
     }
 
+    // ---------- ANIMATED BATTERY FILL ----------
+    property real animatedFraction: 0
+
+    NumberAnimation {
+        id: fillAnim
+        target: root
+        property: "animatedFraction"
+        to: root.percent / 100
+        duration: 700
+        easing.type: Easing.OutCubic
+    }
+
+    // плавно подтягиваем полоску к новому проценту, если он меняется
+    // пока панель уже открыта (например, подключили/отключили зарядку) —
+    // без необходимости закрывать и открывать окно заново
+    NumberAnimation {
+        id: liveUpdateAnim
+        target: root
+        property: "animatedFraction"
+        duration: 400
+        easing.type: Easing.OutCubic
+    }
+
+    onPercentChanged: {
+        if (!root.expanded)
+            return
+        if (fillAnim.running)
+            return
+        liveUpdateAnim.stop()
+        liveUpdateAnim.to = root.percent / 100
+        liveUpdateAnim.start()
+    }
+
     readonly property var profiles: [
         { label: "Экономия", profile: PowerProfile.PowerSaver },
         { label: "Баланс", profile: PowerProfile.Balanced },
@@ -158,10 +191,16 @@ PanelWindow {
             function onExpandedChanged() {
                 closeAnim.stop()
                 openAnim.stop()
-                if (root.expanded)
+                fillAnim.stop()
+                liveUpdateAnim.stop()
+                if (root.expanded) {
+                    root.animatedFraction = 0
+                    fillAnim.to = root.percent / 100
                     openAnim.start()
-                else
+                    fillAnim.start()
+                } else {
                     closeAnim.start()
+                }
             }
         }
 
@@ -204,7 +243,7 @@ PanelWindow {
                 Rectangle {
                     height: parent.height
                     radius: 4
-                    width: parent.width * (root.percent / 100)
+                    width: parent.width * root.animatedFraction
 
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
