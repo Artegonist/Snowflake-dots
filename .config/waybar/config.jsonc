@@ -18,7 +18,8 @@
         "bluetooth",
         "network",
         "hyprland/language",
-        "battery"
+        "battery",
+        "custom/power"
     ],
     "clock": {
         "format": "{:%H:%M:%S}",
@@ -43,6 +44,11 @@
         "format": "{}",
         "format-en": " EN",
         "format-ru": " RU",
+        "tooltip": false
+    },
+    "custom/power": {
+        "format":  " ",
+        "on-click": "systemctl poweroff",
         "tooltip": false
     },
     "network": {
