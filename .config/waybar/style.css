@@ -62,6 +62,7 @@ window#waybar {
     font-size: 18px;
 }
 
+
 #sysinfo {
     border: 2px solid @hover_light;
     border-radius: 10px;
