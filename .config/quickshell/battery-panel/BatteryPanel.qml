@@ -54,8 +54,8 @@ PanelWindow {
     }
 
     margins {
-        top: 31
-        right: 4
+        top: 30
+        right: 3
     }
 
     exclusionMode: ExclusionMode.Ignore
@@ -65,14 +65,14 @@ PanelWindow {
     implicitHeight: 300
 
     // ---------- COLORS ----------
-    readonly property color accentPrimary: "#5fa77c"
-    readonly property color accentSecondary: "#446b56"
-    readonly property color bgPanel: "#1c211e"
-    readonly property color bgTrack: "#2a322d"
-    readonly property color borderColor: "#5fa77c"
+    readonly property color accentPrimary: "#e8a87c"
+    readonly property color accentSecondary: "#b8754a"
+    readonly property color bgPanel: "#30221a"
+    readonly property color bgTrack: "#453224"
+    readonly property color borderColor: "#e8a87c"
     readonly property color separatorColor: Qt.rgba(1, 1, 1, 0.08)
-    readonly property color textMain: "#eef3ef"
-    readonly property color textDim: "#8fa196"
+    readonly property color textMain: "#faf0e6"
+    readonly property color textDim: "#c4a68c"
 
     // ---------- BATTERY(via Upower) ----------
     readonly property var battery: UPower.displayDevice
@@ -110,10 +110,6 @@ PanelWindow {
         duration: 700
         easing.type: Easing.OutCubic
     }
-
-    // плавно подтягиваем полоску к новому проценту, если он меняется
-    // пока панель уже открыта (например, подключили/отключили зарядку) —
-    // без необходимости закрывать и открывать окно заново
     NumberAnimation {
         id: liveUpdateAnim
         target: root
