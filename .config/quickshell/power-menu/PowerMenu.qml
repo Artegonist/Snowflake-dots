@@ -17,12 +17,12 @@ PanelWindow {
     color: "transparent"
 
     // PALETTE
-    readonly property color accentPrimary: "#e8a0b4"
-    readonly property color accentSecondary: "#b96c82"
-    readonly property color bgPanel: "#2c1f24"
-    readonly property color bgTrack: "#402e34"
-    readonly property color borderColor: "#e8a0b4"
-    readonly property color textMain: "#fbeef1"
+    readonly property color accentPrimary: "#5fa77c"
+    readonly property color accentSecondary: "#446b56"
+    readonly property color bgPanel: "#1c211e"
+    readonly property color bgTrack: "#2a322d"
+    readonly property color borderColor: "#5fa77c"
+    readonly property color textMain: "#eef3ef"
 
     // ANCHORS
     anchors {
@@ -190,6 +190,13 @@ PanelWindow {
         windows: [root]
         active: root.menuVisible
         onCleared: root.menuVisible = false
+    }
+
+    // ESCAPE TO CLOSE
+    Shortcut {
+        sequence: "Escape"
+        enabled: root.menuVisible
+        onActivated: root.menuVisible = false
     }
 
     // BUTTON
