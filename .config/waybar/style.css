@@ -4,12 +4,13 @@
     font-family: JetBrainsMono Nerd Font;
     font-size: 18px;
 }
- 
+
 window#waybar {
     background: alpha(@bg_panel_waybar, 0.85);
     color: @text_waybar;
 }
- 
+
+/* === Workspaces === */
 #workspaces button {
     background-color: transparent;
     color: @text_waybar;
@@ -17,23 +18,38 @@ window#waybar {
     padding: 0 8px;
     transition: all 0.2s ease;
 }
- 
+
 #workspaces button.active {
     background-color: @workspace_active;
     color: @bg_panel_waybar;
 }
- 
-#workspaces button:hover {
+
+/* === Общий hover для ВСЕХ модулей === */
+#workspaces button:hover,
+#cava:hover,
+#clock:hover,
+#backlight:hover,
+#pulseaudio:hover,
+#network:hover,
+#bluetooth:hover,
+#custom-battery:hover,
+#language:hover,
+#sysinfo:hover,
+#sysinfo #memory:hover,
+#sysinfo #cpu:hover,
+#sysinfo #temperature:hover {
     background-color: @hover_light;
     color: @workspace_active;
+    border-radius: 10px;
+    transition: all 0.2s ease;
 }
- 
+
 #clock,
 #network,
 #pulseaudio {
     padding: 0 10px;
 }
- 
+
 #workspaces button,
 #cava,
 #clock,
@@ -45,9 +61,9 @@ window#waybar {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 18px;
 }
- 
+
 #sysinfo {
-    border: 2px solid @workspace_active;
+    border: 2px solid @hover_light;
     border-radius: 10px;
     padding: 0 3px;
 }
@@ -58,23 +74,15 @@ window#waybar {
     padding: 0 6px;
     color: @text_waybar;
 }
- 
+
 #sysinfo #memory,
 #sysinfo #cpu,
 #sysinfo #temperature {
     padding: 0 6px;
 }
- 
-#temperature {
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 15px;
-}
- 
-#memory {
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 15px;
-}
- 
+
+#temperature,
+#memory,
 #cpu {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 15px;
