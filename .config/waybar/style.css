@@ -1,3 +1,4 @@
+@import "colors.css";
 
 * {
     font-family: JetBrainsMono Nerd Font;
@@ -5,26 +6,26 @@
 }
  
 window#waybar {
-    background: rgba(27, 36, 28, 0.85);
-    color: #A8C3A0;
+    background: alpha(@bg_panel_waybar, 0.85);
+    color: @text_waybar;
 }
  
 #workspaces button {
     background-color: transparent;
-    color: #A8C3A0;
+    color: @text_waybar;
     border-radius: 10px;
     padding: 0 8px;
     transition: all 0.2s ease;
 }
  
 #workspaces button.active {
-    background-color: #6E8F72;
-    color: #1B241C;
+    background-color: @workspace_active;
+    color: @bg_panel_waybar;
 }
  
 #workspaces button:hover {
-    background-color: #B7D3A8;
-    color: #6E8F72;
+    background-color: @hover_light;
+    color: @workspace_active;
 }
  
 #clock,
@@ -46,7 +47,7 @@ window#waybar {
 }
  
 #sysinfo {
-    border: 2px solid #6E8F72;
+    border: 2px solid @workspace_active;
     border-radius: 10px;
     padding: 0 3px;
 }
@@ -55,7 +56,7 @@ window#waybar {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 18px;
     padding: 0 6px;
-    color: #A8C3A0;
+    color: @text_waybar;
 }
  
 #sysinfo #memory,
