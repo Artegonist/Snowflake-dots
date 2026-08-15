@@ -89,7 +89,7 @@ emit_state() {
 
     icon="$(pick_icon "$percent" "$state")"
     class="$(pick_class "$percent" "$state")"
-    text="${icon} ${percent}%"
+    text=" ${icon} ${percent}% "
 
     local time_line tooltip
     if [[ "$state" == "charging" ]]; then
