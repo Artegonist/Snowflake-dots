@@ -3,7 +3,7 @@
     "position": "top",
     "width": 1920,
     "height": 27,
-    "spacing": 7,
+    "spacing": 6,
     "modules-left": [
         "hyprland/workspaces",
         "cava"
@@ -80,7 +80,7 @@
     }, 
     "backlight": {
         "tooltip": false,
-        "format": "{icon} {percent}%",
+        "format": " {icon} {percent}% ",
         "format-icons": [
             "󱩎",
             "󱩏",
