@@ -14,7 +14,7 @@
     "modules-right": [
         "group/sysinfo",
         "backlight",
-        "pulseaudio", 
+        "pulseaudio",
         "bluetooth",
         "network",
         "hyprland/language",
@@ -34,6 +34,7 @@
         },
         "on-click": "qs -c audio-module ipc call audio toggle",
         "scroll-step": 1,
+        "reverse-scrolling": true,
         "tooltip": false
     },
     "hyprland/workspaces": {
@@ -44,7 +45,8 @@
         "format": "{}",
         "format-en": " EN",
         "format-ru": " RU",
-        "on-click": "hyprctl switchxkblayout curent next",
+        "format-da": " DK",
+        "on-click": "hyprctl switchxkblayout current next",
         "tooltip": false
     },
     "custom/power": {
@@ -55,17 +57,18 @@
     "network": {
         "interface": "wlp0s20f3",
         "format": "{icon}",
+        "on-click": "qs -c wifi-panel ipc call wifi toggle",
         "format-wifi": "{icon} {essid}",
         "format-ethernet": "󰈀 Проводная",
         "format-disconnected": "󰤭 Нет сети",
+        "format-disabled": "󰤮 выключен",
         "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
-        "on-click": "nm-connection-editor",
         "interval": 1,
         "tooltip": false
     },
     "bluetooth": {
-        "format": "󰂯",
-        "format-disabled": "󰂲",
+        "format": " 󰂯 ",
+        "format-disabled": " 󰂲 ",
         "format-off": "󰂲 Off",
         "format-on": "󰂯 On",
         "format-connected": "󰂱  {device_alias}",
@@ -81,6 +84,7 @@
     }, 
     "backlight": {
         "tooltip": false,
+        "reverse-scrolling": true,
         "format": " {icon} {percent}% ",
         "format-icons": [
             "󱩎",
@@ -107,18 +111,21 @@
     "memory": {
     	"interval": 5,
         "tooltip": false,
+        "on-click": "qs -c system-info ipc call sysinfo toggle",
     	"format": "{icon} {percentage}%",
     	"format-icons":[""]
     },
     "cpu": {
     	"interval": 5,
         "tooltip": false,
+        "on-click": "qs -c system-info ipc call sysinfo toggle",
         "format": "{icon} {usage}%",
         "format-icons":[""]
     },
     "temperature": {
         "interval": 5,
         "tooltip": false,
+        "on-click": "qs -c system-info ipc call sysinfo toggle",
         "hwmon-path": "/sys/class/hwmon/hwmon5/temp1_input",       
         "format": "{icon} {temperatureC}°",
         "format-icons": ["","","",""]
