@@ -28,6 +28,9 @@ output_path = "~/.config/quickshell/battery-panel/BatteryPanel.qml"
 input_path = "~/.config/matugen/templates/PowerMenu.qml"
 output_path = "~/.config/quickshell/power-menu/PowerMenu.qml"
 
+[templates.wifi_panel]
+input_path = '~/.config/matugen/templates/WifiPanel.qml'
+output_path = '~/.config/quickshell/wifi-panel/WifiPanel.qml'
  
 
 
