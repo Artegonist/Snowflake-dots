@@ -13,8 +13,7 @@ post_hook = "pkill -SIGUSR2 waybar"
 [templates.wofi]
 input_path = "~/.config/matugen/templates/wofi-colors.css"
 output_path = "~/.config/wofi/colors.css"
-# wofi читает style.css заново при каждом открытии — reload не нужен
- 
+
 [templates.swayosd]
 input_path = "~/.config/matugen/templates/swayosd-colors.css"
 output_path = "~/.config/swayosd/colors.css"
