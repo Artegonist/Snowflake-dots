@@ -65,14 +65,14 @@ PanelWindow {
     implicitHeight: 300
 
     // ---------- COLORS ----------
-    readonly property color accentPrimary: "{{theme.accent_primary.hex}}"
-    readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
-    readonly property color bgPanel: "{{theme.bg_panel_battery.hex}}"
-    readonly property color bgTrack: "{{theme.bg_track.hex}}"
-    readonly property color borderColor: "{{theme.accent_primary.hex}}"
+    readonly property color accentPrimary: "#d71921"
+    readonly property color accentSecondary: "#a3141a"
+    readonly property color bgPanel: "#0c0c0c"
+    readonly property color bgTrack: "#1a1a1a"
+    readonly property color borderColor: "#d71921"
     readonly property color separatorColor: Qt.rgba(1, 1, 1, 0.08)
-    readonly property color textMain: "{{theme.text_main.hex}}"
-    readonly property color textDim: "{{theme.text_dim.hex}}"
+    readonly property color textMain: "#f5f5f5"
+    readonly property color textDim: "#8a8a8a"
 
     // ---------- BATTERY(via Upower) ----------
     readonly property var battery: UPower.displayDevice
@@ -332,4 +332,3 @@ PanelWindow {
         }
     }
 }
-
