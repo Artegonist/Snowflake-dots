@@ -10,7 +10,6 @@ window#waybar {
     color: @text_waybar;
 }
 
-/* === Workspaces === */
 #workspaces button {
     background-color: transparent;
     color: @text_waybar;
@@ -24,7 +23,6 @@ window#waybar {
     color: @bg_panel_waybar;
 }
 
-/* === Общий hover для ВСЕХ модулей === */
 #workspaces button:hover,
 #cava:hover,
 #clock:hover,
