@@ -2,7 +2,7 @@
 
 DIR="/home/artegonist/Картинки/wallpapers"
 CACHE_DIR="$HOME/.cache/hypr"
-CURRENT="$CACHE_DIR/wallpaper"   # путь к текущей картинке (для восстановления при старте)
+CURRENT="$CACHE_DIR/wallpaper"  
 INDEX="$CACHE_DIR/wallpaper_index"
 
 mkdir -p "$CACHE_DIR"
