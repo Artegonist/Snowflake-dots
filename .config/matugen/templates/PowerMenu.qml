@@ -11,9 +11,6 @@ PanelWindow {
     property bool menuVisible: false
     // ------------------- CLOSING -----------------------
     property bool closing: false
-    // Once shown, stays mapped forever (collapses to an invisible
-    // 8x0 sliver when closed) so we never unmap mid-animation and
-    // risk a ghost frame if the workspace is switched right after closing.
     property bool everOpened: false
     visible: everOpened
 
