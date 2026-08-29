@@ -13,12 +13,7 @@ post_hook = "pkill -SIGUSR2 waybar"
 [templates.wofi]
 input_path = "~/.config/matugen/templates/wofi-colors.css"
 output_path = "~/.config/wofi/colors.css"
-
-[templates.swayosd]
-input_path = "~/.config/matugen/templates/swayosd-colors.css"
-output_path = "~/.config/swayosd/colors.css"
-post_hook = "pkill swayosd-server; swayosd-server & disown"
-
+ 
 [templates.battery_panel]
 input_path = "~/.config/matugen/templates/BatteryPanel.qml"
 output_path = "~/.config/quickshell/battery-panel/BatteryPanel.qml"
@@ -30,6 +25,15 @@ output_path = "~/.config/quickshell/power-menu/PowerMenu.qml"
 [templates.wifi_panel]
 input_path = '~/.config/matugen/templates/WifiPanel.qml'
 output_path = '~/.config/quickshell/wifi-panel/WifiPanel.qml'
+
+[templates.osd_panel]
+input_path = '~/.config/matugen/templates/OsdModule.qml'
+output_path = '~/.config/quickshell/osd-module/OsdModule.qml'
+
+[templates.bluetooth_panel]
+input_path = '~/.config/matugen/templates/BluetoothPanel.qml'
+output_path = '~/.config/quickshell/bluetooth-panel/BluetoothPanel.qml'
+
  
 
 
