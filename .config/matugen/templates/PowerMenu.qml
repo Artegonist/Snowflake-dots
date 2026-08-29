@@ -7,16 +7,20 @@ import Quickshell.Hyprland
 PanelWindow {
     id: root
 
-    // VISIBILITY
+    // ------------------- VISIBILITY --------------------
     property bool menuVisible: false
-    // CLOSING
+    // ------------------- CLOSING -----------------------
     property bool closing: false
-    visible: menuVisible || closing
+    // Once shown, stays mapped forever (collapses to an invisible
+    // 8x0 sliver when closed) so we never unmap mid-animation and
+    // risk a ghost frame if the workspace is switched right after closing.
+    property bool everOpened: false
+    visible: everOpened
 
-    // BACKGROUND
+    // ---------------- BACKGROUND ----------------------
     color: "transparent"
 
-    // PALETTE
+    // ----------------- PALETTE ------------------------
     readonly property color accentPrimary: "{{theme.accent_primary.hex}}"
     readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
     readonly property color bgPanel: "{{theme.bg_panel_battery.hex}}"
@@ -24,7 +28,7 @@ PanelWindow {
     readonly property color borderColor: "{{theme.accent_primary.hex}}"
     readonly property color textMain: "{{theme.text_main.hex}}"
 
-    // ANCHORS
+    // ----------------- ANCHORS -------------------------
     anchors {
         top: true
         right: true
@@ -34,21 +38,22 @@ PanelWindow {
         right: 3
     }
 
-    // SIZES
+    // ---------------- SIZES ----------------------------
     readonly property int fullWidth: 64
-    readonly property int fullHeight: 196
+    readonly property int fullHeight: 258
     readonly property int lineThickness: 8
 
-    // ANIMSTATE
+    // ------------- ANIMSTATE --------------------------
     property real animWidth: lineThickness
     property real animHeight: 0
 
     implicitWidth: animWidth
     implicitHeight: animHeight
 
-    // TOGGLE
+    //--------------- TOGGLE ---------------------------
     onMenuVisibleChanged: {
         if (menuVisible) {
+            root.everOpened = true
             closeAnimation.stop()
             closing = false
 
@@ -56,6 +61,7 @@ PanelWindow {
             btn1.scale = 0
             btn2.scale = 0
             btn3.scale = 0
+            btn4.scale = 0
 
             animWidth = lineThickness
             animHeight = 0
@@ -68,7 +74,7 @@ PanelWindow {
         }
     }
 
-    // OPEN
+    // ----------------- OPEN ----------------------------
     SequentialAnimation {
         id: openAnimation
 
@@ -90,7 +96,7 @@ PanelWindow {
         onFinished: buttonsAppearAnimation.restart()
     }
 
-    // APPEAR
+    // ----------------------- APPEAR ----------------------------
     SequentialAnimation {
         id: buttonsAppearAnimation
 
@@ -118,9 +124,17 @@ PanelWindow {
             duration: 140
             easing.type: Easing.OutBack
         }
+        NumberAnimation {
+            target: btn4
+            property: "scale"
+            from: 0
+            to: 1
+            duration: 140
+            easing.type: Easing.OutBack
+        }
     }
 
-    // CLOSE
+    // -------------------------- CLOSE ---------------------------------
     SequentialAnimation {
         id: closeAnimation
 
@@ -141,6 +155,13 @@ PanelWindow {
             }
             NumberAnimation {
                 target: btn3
+                property: "scale"
+                to: 0
+                duration: 110
+                easing.type: Easing.InQuad
+            }
+            NumberAnimation {
+                target: btn4
                 property: "scale"
                 to: 0
                 duration: 110
@@ -167,7 +188,7 @@ PanelWindow {
         }
     }
 
-    // IPC
+    // ----------------------- IPC ------------------------
     IpcHandler {
         target: "powermenu"
 
@@ -184,7 +205,7 @@ PanelWindow {
         }
     }
 
-    // FOCUSGRAB
+    // ---------------- FOCUSGRAB -----------------------------
     HyprlandFocusGrab {
         id: grab
         windows: [root]
@@ -192,21 +213,42 @@ PanelWindow {
         onCleared: root.menuVisible = false
     }
 
-    // BUTTON
+    // ---------------- KEYBOARD (ESC TO CLOSE) ----------------
+    Item {
+        anchors.fill: parent
+        focus: root.menuVisible
+
+        Keys.onEscapePressed: root.menuVisible = false
+    }
+
+    // -------------------- BUTTON -----------------------------
     component PowerButton: Rectangle {
         id: btn
 
         property string iconText: ""
         signal clicked()
 
-        // HOLDTIME
+        // ---------------------- HOLDTIME ------------------------
         readonly property int holdDuration: 1500
 
         Layout.fillWidth: true
         Layout.preferredHeight: 52
 
-        // SCALE
+        // ----------------------- SCALE ---------------------------
         scale: 0
+
+        // ------------------- PRESS SQUISH -------------------------
+        // Separate from `scale` above (which is driven by the open/close
+        // appear animation), so the two effects don't fight each other.
+        transform: Scale {
+            origin.x: btn.width / 2
+            origin.y: btn.height / 2
+            xScale: mouseArea.pressed ? 0.93 : 1.0
+            yScale: mouseArea.pressed ? 0.93 : 1.0
+
+            Behavior on xScale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
+            Behavior on yScale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
+        }
 
         // STYLE
         radius: 10
@@ -221,10 +263,10 @@ PanelWindow {
             NumberAnimation { duration: 120 }
         }
 
-        // CLIP
+        // -------------------- CLIP --------------------------
         clip: true
 
-        // FILL
+        // ---------------------- FILL ------------------------
         Rectangle {
             id: holdFill
             anchors.left: parent.left
@@ -235,7 +277,7 @@ PanelWindow {
             color: root.accentPrimary
         }
 
-        // REMAINING
+        // ---------------- REMAINING ----------------------------
         readonly property real holdRemaining: btn.holdDuration / 1000 * (1 - holdFill.height / btn.height)
 
         NumberAnimation {
@@ -249,7 +291,7 @@ PanelWindow {
             onFinished: btn.clicked()
         }
 
-        // ICON
+        // --------------------------- ICON -------------------------
         Text {
             anchors.centerIn: parent
             text: mouseArea.pressed ? btn.holdRemaining.toFixed(1) : btn.iconText
@@ -263,7 +305,7 @@ PanelWindow {
             font.family: "Symbols Nerd Font"
         }
 
-        // OVERLAY
+        // --------------------- OVERLAY ------------------------
         Item {
             anchors.left: parent.left
             anchors.right: parent.right
@@ -281,7 +323,7 @@ PanelWindow {
             }
         }
 
-        // MOUSE
+        // ------------------------- MOUSE ------------------------
         MouseArea {
             id: mouseArea
             anchors.fill: parent
@@ -303,11 +345,11 @@ PanelWindow {
         }
     }
 
-    // PANEL
+    // -------------------------- PANEL ---------------------------
     Rectangle {
         anchors.fill: parent
         color: root.bgPanel
-        // RADIUS
+        // ----------------------- RADIUS --------------------------
         radius: Math.min(8, root.animWidth / 2, root.animHeight / 2)
         border.width: 3
         border.color: root.borderColor
@@ -343,6 +385,15 @@ PanelWindow {
                     exitProcess.running = true
                 }
             }
+
+            PowerButton {
+                id: btn4
+                iconText: "\uf023" // lock
+                onClicked: {
+                    root.menuVisible = false
+                    lockProcess.running = true
+                }
+            }
         }
     }
 
@@ -358,6 +409,11 @@ PanelWindow {
 
     Process {
         id: exitProcess
-        command: ["hyprctl", "dispatch", "exit"]
+        command: ["uwsm", "stop"]
+    }
+
+    Process {
+        id: lockProcess
+        command: ["hyprlock"]
     }
 }
