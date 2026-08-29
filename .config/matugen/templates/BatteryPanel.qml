@@ -10,7 +10,7 @@ PanelWindow {
 
     visible: false
     focusable: true
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     property bool expanded: false
     property bool closing: false
@@ -25,7 +25,7 @@ PanelWindow {
     }
 
     function hide() {
-        if (!root.visible || root.closing)
+        if (!root.expanded || root.closing)
             return
         root.closing = true
         focusGrab.active = false
@@ -34,7 +34,7 @@ PanelWindow {
     }
 
     function toggle() {
-        if (root.visible && !root.closing)
+        if (root.expanded && !root.closing)
             hide()
         else
             show()
@@ -132,7 +132,7 @@ PanelWindow {
     readonly property var profiles: [
         { label: "Экономия", profile: PowerProfile.PowerSaver },
         { label: "Баланс", profile: PowerProfile.Balanced },
-        { label: "Мощность", profile: PowerProfile.Performance }
+        { label: "Моooooщ", profile: PowerProfile.Performance }
     ]
 
     HyprlandFocusGrab {
@@ -174,12 +174,7 @@ PanelWindow {
                 NumberAnimation { target: card; property: "scale"; to: 0.85; duration: 120; easing.type: Easing.InCubic }
             }
             ScriptAction {
-                script: {
-                    if (root.closing) {
-                        root.visible = false
-                        root.closing = false
-                    }
-                }
+                script: root.closing = false
             }
         }
 
@@ -289,7 +284,8 @@ PanelWindow {
                         readonly property bool isDisabled: modelData.profile === PowerProfile.Performance
                                                              && !PowerProfiles.hasPerformanceProfile
 
-                        color: isActive ? root.accentPrimary : root.bgTrack
+                        color: isActive ? root.accentPrimary
+                               : (mouseArea.containsMouse && !isDisabled ? root.accentSecondary : root.bgTrack)
                         opacity: isDisabled ? 0.4 : 1.0
 
                         // SMALL ANIMATION
@@ -322,6 +318,7 @@ PanelWindow {
                         MouseArea {
                             id: mouseArea
                             anchors.fill: parent
+                            hoverEnabled: true
                             enabled: !parent.isDisabled
                             cursorShape: Qt.PointingHandCursor
                             onClicked: PowerProfiles.profile = modelData.profile
