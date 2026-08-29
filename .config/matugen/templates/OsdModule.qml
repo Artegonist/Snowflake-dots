@@ -253,7 +253,6 @@ Scope {
                         const data = JSON.parse(this.text)
                         notchWindow.activeWorkspaceWindows = data.windows ?? 0
                     } catch (e) {
-                        // leave last known value on parse failure
                     }
                 }
             }
