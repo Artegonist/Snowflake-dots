@@ -8,9 +8,10 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
+    //------------------------------- WINDOW SETUP ----------------------
     visible: false
     focusable: true
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     property bool expanded: false
     property bool closing: false
@@ -67,6 +68,7 @@ PanelWindow {
     implicitWidth: 380
     implicitHeight: 540
 
+    //------------------------------- THEME COLORS ----------------------
     readonly property color accentPrimary:   "{{theme.accent_primary.hex}}"
     readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
     readonly property color bgPanelWaybar:   "{{theme.bg_panel_waybar.hex}}"
@@ -85,6 +87,7 @@ PanelWindow {
     readonly property color borderColor: accentPrimary
     readonly property color separatorColor: Qt.rgba(1, 1, 1, 0.08)
 
+    //------------------------------- STATE ----------------------
     property bool wifiEnabled: true
     property bool scanning: false
     property bool busy: false
@@ -101,6 +104,7 @@ PanelWindow {
     property bool passwordPromptVisible: false
     property string pendingSsid: ""
 
+    //------------------------------- FUNCTIONS ----------------------
     function refreshAll() {
         root.refreshRadioState()
         root.refreshActiveConnection()
@@ -248,6 +252,7 @@ PanelWindow {
         return "󰤟"
     }
 
+    //------------------------------- PROCESSES ----------------------
     Process {
         id: radioStateProc
         command: ["nmcli", "-t", "-f", "WIFI", "radio"]
@@ -377,6 +382,7 @@ PanelWindow {
         }
     }
 
+    //------------------------------- LIFECYCLE / TIMERS ----------------------
     Component.onCompleted: {
         root.refreshRadioState()
         root.refreshActiveConnection()
@@ -412,6 +418,7 @@ PanelWindow {
         onTriggered: root.scanNetworks()
     }
 
+    //------------------------------- FOCUS ----------------------
     HyprlandFocusGrab {
         id: focusGrab
         windows: [root]
@@ -423,6 +430,7 @@ PanelWindow {
             root.expanded = true
     }
 
+    //------------------------------- LAYOUT ----------------------
     Rectangle {
         id: card
         anchors.fill: parent
@@ -439,6 +447,7 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: root.hide()
 
+        //------------------------------- ANIMATIONS ----------------------
         SequentialAnimation {
             id: openAnim
 
@@ -496,12 +505,14 @@ PanelWindow {
             }
         }
 
+        //------------------------------- MAIN CONTENT ----------------------
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 24
             spacing: 14
             visible: root.wifiEnabled
 
+            //------------------------------- HEADER / TOP SECTION ----------------------
             ColumnLayout {
                 id: topSection
                 Layout.fillWidth: true
@@ -541,6 +552,7 @@ PanelWindow {
                     }
                 }
 
+                //------------------------------- CONNECTION INFO ----------------------
                 Rectangle {
                     Layout.fillWidth: true
                     visible: root.wifiEnabled
@@ -651,6 +663,7 @@ PanelWindow {
                     visible: root.wifiEnabled
                 }
 
+                //------------------------------- NETWORK LIST HEADER ----------------------
                 RowLayout {
                     Layout.fillWidth: true
                     visible: root.wifiEnabled
@@ -711,6 +724,7 @@ PanelWindow {
                 }
             }
 
+            //------------------------------- NETWORK LIST ----------------------
             Flickable {
                 id: networkList
                 Layout.fillWidth: true
@@ -808,6 +822,7 @@ PanelWindow {
             }
         }
 
+        //------------------------------- WIFI TOGGLE BUTTON ----------------------
         Rectangle {
             id: wifiToggleButton
             z: 20
@@ -952,6 +967,7 @@ PanelWindow {
             }
         }
 
+        //------------------------------- PASSWORD PROMPT ----------------------
         Rectangle {
             anchors.fill: parent
             radius: 8
