@@ -8,9 +8,10 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
+    //------------------------------- WINDOW SETUP ----------------------
     visible: false
     focusable: true
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     property bool expanded: false
     property bool closing: false
@@ -67,24 +68,26 @@ PanelWindow {
     implicitWidth: 380
     implicitHeight: 540
 
-    readonly property color accentPrimary:   "#d71921"
-    readonly property color accentSecondary: "#a3141a"
-    readonly property color bgPanelWaybar:   "#0a0a0a"
-    readonly property color bgPanel:         "#0c0c0c"
-    readonly property color bgTrack:         "#1a1a1a"
-    readonly property color bgInput:         "#141414"
-    readonly property color textMain:        "#f5f5f5"
-    readonly property color textDim:         "#8a8a8a"
-    readonly property color textWaybar:      "#eaeaea"
-    readonly property color workspaceActive: "#d71921"
-    readonly property color hoverLight:      "#2a2a2a"
-    readonly property color hoverSelect:     "#3a1114"
-    readonly property color inputTextColor:  "#f5f5f5"
-    readonly property color accentText:      "#d71921"
+    //------------------------------- THEME COLORS ----------------------
+    readonly property color accentPrimary:   "#5fa77c"
+    readonly property color accentSecondary: "#446b56"
+    readonly property color bgPanelWaybar:   "#1b241c"
+    readonly property color bgPanel:         "#1c211e"
+    readonly property color bgTrack:         "#2a322d"
+    readonly property color bgInput:         "#1e2d26"
+    readonly property color textMain:        "#eef3ef"
+    readonly property color textDim:         "#8fa196"
+    readonly property color textWaybar:      "#a8c3a0"
+    readonly property color workspaceActive: "#6e8f72"
+    readonly property color hoverLight:      "#b7d3a8"
+    readonly property color hoverSelect:     "#b4dcc3"
+    readonly property color inputTextColor:  "#e8f0ec"
+    readonly property color accentText:      "#cdd6f4"
 
     readonly property color borderColor: accentPrimary
     readonly property color separatorColor: Qt.rgba(1, 1, 1, 0.08)
 
+    //------------------------------- STATE ----------------------
     property bool wifiEnabled: true
     property bool scanning: false
     property bool busy: false
@@ -101,6 +104,7 @@ PanelWindow {
     property bool passwordPromptVisible: false
     property string pendingSsid: ""
 
+    //------------------------------- FUNCTIONS ----------------------
     function refreshAll() {
         root.refreshRadioState()
         root.refreshActiveConnection()
@@ -248,6 +252,7 @@ PanelWindow {
         return "󰤟"
     }
 
+    //------------------------------- PROCESSES ----------------------
     Process {
         id: radioStateProc
         command: ["nmcli", "-t", "-f", "WIFI", "radio"]
@@ -377,6 +382,7 @@ PanelWindow {
         }
     }
 
+    //------------------------------- LIFECYCLE / TIMERS ----------------------
     Component.onCompleted: {
         root.refreshRadioState()
         root.refreshActiveConnection()
@@ -412,6 +418,7 @@ PanelWindow {
         onTriggered: root.scanNetworks()
     }
 
+    //------------------------------- FOCUS ----------------------
     HyprlandFocusGrab {
         id: focusGrab
         windows: [root]
@@ -423,6 +430,7 @@ PanelWindow {
             root.expanded = true
     }
 
+    //------------------------------- LAYOUT ----------------------
     Rectangle {
         id: card
         anchors.fill: parent
@@ -439,6 +447,7 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: root.hide()
 
+        //------------------------------- ANIMATIONS ----------------------
         SequentialAnimation {
             id: openAnim
 
@@ -496,12 +505,14 @@ PanelWindow {
             }
         }
 
+        //------------------------------- MAIN CONTENT ----------------------
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 24
             spacing: 14
             visible: root.wifiEnabled
 
+            //------------------------------- HEADER / TOP SECTION ----------------------
             ColumnLayout {
                 id: topSection
                 Layout.fillWidth: true
@@ -541,6 +552,7 @@ PanelWindow {
                     }
                 }
 
+                //------------------------------- CONNECTION INFO ----------------------
                 Rectangle {
                     Layout.fillWidth: true
                     visible: root.wifiEnabled
@@ -651,6 +663,7 @@ PanelWindow {
                     visible: root.wifiEnabled
                 }
 
+                //------------------------------- NETWORK LIST HEADER ----------------------
                 RowLayout {
                     Layout.fillWidth: true
                     visible: root.wifiEnabled
@@ -711,6 +724,7 @@ PanelWindow {
                 }
             }
 
+            //------------------------------- NETWORK LIST ----------------------
             Flickable {
                 id: networkList
                 Layout.fillWidth: true
@@ -808,6 +822,7 @@ PanelWindow {
             }
         }
 
+        //------------------------------- WIFI TOGGLE BUTTON ----------------------
         Rectangle {
             id: wifiToggleButton
             z: 20
@@ -952,6 +967,7 @@ PanelWindow {
             }
         }
 
+        //------------------------------- PASSWORD PROMPT ----------------------
         Rectangle {
             anchors.fill: parent
             radius: 8
