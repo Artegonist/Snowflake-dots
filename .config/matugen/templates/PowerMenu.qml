@@ -235,8 +235,6 @@ PanelWindow {
         scale: 0
 
         // ------------------- PRESS SQUISH -------------------------
-        // Separate from `scale` above (which is driven by the open/close
-        // appear animation), so the two effects don't fight each other.
         transform: Scale {
             origin.x: btn.width / 2
             origin.y: btn.height / 2
