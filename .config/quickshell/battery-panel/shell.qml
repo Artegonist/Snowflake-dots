@@ -1,4 +1,3 @@
-//   qs -c battery-panel ipc call batteryPanel toggle
 import Quickshell
 import Quickshell.Io
 
