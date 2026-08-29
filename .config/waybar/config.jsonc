@@ -5,8 +5,7 @@
     "height": 27,
     "spacing": 6,
     "modules-left": [
-        "hyprland/workspaces",
-        "cava"
+        "hyprland/workspaces"
     ],
     "modules-center": [
         "clock"
@@ -69,11 +68,9 @@
     "bluetooth": {
         "format": " 󰂯 ",
         "format-disabled": " 󰂲 ",
-        "format-off": "󰂲 Off",
-        "format-on": "󰂯 On",
-        "format-connected": "󰂱  {device_alias}",
-        "format-connected-battery": "󰂱  {device_alias} 󰥇 {device_battery_percentage}%",
-        "on-click": "blueman-manager",
+        "format-on": " 󰂯 ",
+        "format-connected": " 󰂱 {device_alias} ",
+        "on-click": "qs -c bluetooth-panel ipc call bluetooth toggle",
         "interval": 1,
         "tooltip": false
     },
