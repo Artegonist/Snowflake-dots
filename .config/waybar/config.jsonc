@@ -1,11 +1,12 @@
-{
+ {
     "layer": "top",
     "position": "top",
     "width": 1920,
     "height": 27,
     "spacing": 6,
     "modules-left": [
-        "hyprland/workspaces"
+        "hyprland/workspaces",
+        "group/player"
     ],
     "modules-center": [
         "clock"
@@ -20,9 +21,39 @@
         "custom/battery",
         "custom/power"
     ],
+    "group/player": {
+        "orientation": "horizontal",
+        "spacing": 10,
+        "modules": [
+            "custom/prevbutton",
+            "custom/playbutton",
+            "custom/nextbutton"
+        ]
+    },
+    "custom/playbutton": {
+        "exec": "~/.config/waybar/scripts/playbutton.sh",
+        "return-type": "json",
+        "on-click": "playerctl play-pause",
+        "restart-interval": 5,
+        "signal": 8,
+        "interval": 1,
+        "tooltip": false
+    },
+    "custom/prevbutton": {
+        "format": "󰒮",
+        "on-click": "playerctl previous",
+        "tooltip": false
+    },
+    "custom/nextbutton": {
+        "format": "󰒭",
+        "on-click": "playerctl next",
+        "tooltip": false
+    },
+    
     "clock": {
         "format": "{:%H:%M:%S}",
         "interval": 1,
+        "on-click": "qs -c hub-module ipc call hub toggle",
         "tooltip": false
     },	
     "pulseaudio": {
@@ -60,7 +91,7 @@
         "format-wifi": "{icon} {essid}",
         "format-ethernet": "󰈀 Проводная",
         "format-disconnected": "󰤭 Нет сети",
-        "format-disabled": "󰤮 выключен",
+        "format-disabled": "󰤮 Отключен",
         "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
         "interval": 1,
         "tooltip": false
