@@ -34,6 +34,12 @@ output_path = '~/.config/quickshell/osd-module/OsdModule.qml'
 input_path = '~/.config/matugen/templates/BluetoothPanel.qml'
 output_path = '~/.config/quickshell/bluetooth-panel/BluetoothPanel.qml'
 
+[templates.audio_panel]
+input_path = '~/.config/matugen/templates/AudioPanel.qml'
+output_path = '~/.config/quickshell/audio-module/AudioPanel.qml'
+
+
+
  
 
 
