@@ -63,8 +63,9 @@
             "default": ["󰕿", "󰖀", "󰕾"]
         },
         "on-click": "qs -c audio-module ipc call audio toggle",
-        "scroll-step": 1,
-        "reverse-scrolling": true,
+        "on-scroll-up": "qs -c osd-module ipc call osd incVolume -1",
+        "on-scroll-down": "qs -c osd-module ipc call osd incVolume 1",
+        "smooth-scrolling-threshold": 1,
         "tooltip": false
     },
     "hyprland/workspaces": {
