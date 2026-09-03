@@ -110,6 +110,14 @@ PanelWindow {
         onCleared: root.closeInternal(false)
     }
 
+    IpcHandler {
+        target: "audio"
+
+        function toggle(): void {
+            root.toggle()
+        }
+    }
+
     onVisibleChanged: {
         if (visible && !root.expanded)
             root.expanded = true
@@ -126,6 +134,17 @@ PanelWindow {
 
     readonly property var sinkAudio: sinkNode ? sinkNode.audio : null
     readonly property var sourceAudio: sourceNode ? sourceNode.audio : null
+
+    function volumesPreservingBalance(currentVolumes, targetAvg) {
+        if (!currentVolumes || currentVolumes.length === 0) return currentVolumes
+        const sum = currentVolumes.reduce((a, b) => a + b, 0)
+        const currentAvg = sum / currentVolumes.length
+        if (currentAvg <= 0.0001) {
+            return currentVolumes.map(() => targetAvg)
+        }
+        const scale = targetAvg / currentAvg
+        return currentVolumes.map(v => Math.max(0, Math.min(1, v * scale)))
+    }
 
     readonly property string sinkFormatLabel: {
         const props = sinkNode ? sinkNode.properties : null
@@ -287,7 +306,12 @@ PanelWindow {
                     if (!row.audio) return
                     const frac = Math.max(0, Math.min(1, x / track.width))
                     row.audio.muted = false
-                    row.audio.volume = frac
+                    const vols = row.audio.volumes
+                    if (vols && vols.length > 1) {
+                        row.audio.volumes = row.root.volumesPreservingBalance(vols, frac)
+                    } else {
+                        row.audio.volume = frac
+                    }
                 }
 
                 onPressed: (mouse) => setFromX(mouse.x)
@@ -295,7 +319,13 @@ PanelWindow {
                 onWheel: (wheel) => {
                     if (!row.audio) return
                     const step = wheel.angleDelta.y > 0 ? 0.02 : -0.02
-                    row.audio.volume = Math.max(0, Math.min(1, row.audio.volume + step))
+                    const target = Math.max(0, Math.min(1, row.audio.volume + step))
+                    const vols = row.audio.volumes
+                    if (vols && vols.length > 1) {
+                        row.audio.volumes = row.root.volumesPreservingBalance(vols, target)
+                    } else {
+                        row.audio.volume = target
+                    }
                 }
             }
         }
@@ -650,12 +680,14 @@ PanelWindow {
         property string activePreset: "Плоский"
 
         property var customPresets: [null, null, null, null]
+        property var customPresetNames: ["", "", "", ""]
         property bool saveMode: false
         property bool stateReady: false
 
         onBandGainsChanged: if (eqPage.stateReady) eqState.bandGains = eqPage.bandGains
         onActivePresetChanged: if (eqPage.stateReady) eqState.activePreset = eqPage.activePreset
         onCustomPresetsChanged: if (eqPage.stateReady) eqState.customPresets = eqPage.customPresets
+        onCustomPresetNamesChanged: if (eqPage.stateReady) eqState.customPresetNames = eqPage.customPresetNames
 
         FileView {
             id: stateFile
@@ -668,6 +700,7 @@ PanelWindow {
                 eqPage.bandGains = eqState.bandGains
                 eqPage.activePreset = eqState.activePreset
                 eqPage.customPresets = eqState.customPresets
+                eqPage.customPresetNames = eqState.customPresetNames
                 eqPage.stateReady = true
                 eqPage.pushToBackend()
             }
@@ -681,6 +714,7 @@ PanelWindow {
                 property var bandGains: [0, 0, 0, 0, 0, 0, 0, 0]
                 property string activePreset: "Плоский"
                 property var customPresets: [null, null, null, null]
+                property var customPresetNames: ["", "", "", ""]
             }
         }
 
@@ -705,7 +739,19 @@ PanelWindow {
         }
 
         function customPresetName(i) {
-            return "Польз. " + (i + 1)
+            const custom = eqPage.customPresetNames[i]
+            return (custom && custom.length > 0) ? custom : ("Польз. " + (i + 1))
+        }
+
+        function renameCustomPreset(i, newName) {
+            const trimmed = newName.trim()
+            const oldName = eqPage.customPresetName(i)
+            const arr = eqPage.customPresetNames.slice()
+            arr[i] = trimmed
+            eqPage.customPresetNames = arr
+            if (eqPage.activePreset === oldName) {
+                eqPage.activePreset = eqPage.customPresetName(i)
+            }
         }
 
         function applyCustomPreset(i) {
@@ -899,14 +945,15 @@ PanelWindow {
                         property bool filled: eqPage.customPresets[customChip.index] !== null
                         property bool active: eqPage.activePreset === eqPage.customPresetName(customChip.index)
                         property bool hovered: false
+                        property bool editing: false
                         Layout.fillWidth: true
                         radius: 8
                         height: 32
                         color: customChip.active ? eqPage.root.accentPrimary
                              : customChip.hovered ? eqPage.root.bgTrack
                              : Qt.darker(eqPage.root.bgTrack, 1.08)
-                        border.width: eqPage.saveMode ? 2 : 1
-                        border.color: eqPage.saveMode ? eqPage.root.accentPrimary
+                        border.width: (eqPage.saveMode || customChip.editing) ? 2 : 1
+                        border.color: (eqPage.saveMode || customChip.editing) ? eqPage.root.accentPrimary
                                     : customChip.active ? eqPage.root.accentPrimary
                                     : eqPage.root.separatorColor
                         opacity: (!customChip.filled && !eqPage.saveMode) ? 0.55 : 1.0
@@ -916,21 +963,59 @@ PanelWindow {
                         Behavior on opacity { NumberAnimation { duration: 100 } }
                         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
 
+                        function commitRename() {
+                            eqPage.renameCustomPreset(customChip.index, renameField.text)
+                            customChip.editing = false
+                        }
+
                         Text {
                             anchors.centerIn: parent
+                            visible: !customChip.editing
                             text: eqPage.customPresetName(customChip.index)
                             font.pixelSize: 12
                             color: customChip.active ? eqPage.root.bgPanel : eqPage.root.textMain
                         }
 
+                        TextInput {
+                            id: renameField
+                            anchors.centerIn: parent
+                            width: parent.width - 10
+                            visible: customChip.editing
+                            font.pixelSize: 12
+                            color: customChip.active ? eqPage.root.bgPanel : eqPage.root.textMain
+                            horizontalAlignment: TextInput.AlignHCenter
+                            clip: true
+                            selectByMouse: true
+
+                            onVisibleChanged: if (visible) {
+                                renameField.text = eqPage.customPresetName(customChip.index)
+                                renameField.forceActiveFocus()
+                                renameField.selectAll()
+                            }
+
+                            onAccepted: customChip.commitRename()
+                            onActiveFocusChanged: if (!activeFocus && customChip.editing) customChip.commitRename()
+
+                            Keys.onEscapePressed: customChip.editing = false
+                        }
+
                         MouseArea {
                             id: customChipArea
                             anchors.fill: parent
+                            enabled: !customChip.editing
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onEntered: customChip.hovered = true
                             onExited: customChip.hovered = false
-                            onClicked: eqPage.onCustomChipClicked(customChip.index)
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton)
+                                    eqPage.onCustomChipClicked(customChip.index)
+                            }
+                            onDoubleClicked: (mouse) => {
+                                if (mouse.button === Qt.RightButton)
+                                    customChip.editing = true
+                            }
                         }
                     }
                 }
@@ -1029,20 +1114,6 @@ PanelWindow {
                 }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-
-                Text {
-                    Layout.fillWidth: true
-                    text: eqPage.saveMode
-                          ? "Выберите слот, чтобы сохранить текущие настройки"
-                          : (eqPage.activePreset !== "" ? "Пресет: " + eqPage.activePreset : "Пользовательская настройка")
-                    color: eqPage.saveMode ? eqPage.root.accentPrimary : eqPage.root.textDim
-                    font.pixelSize: 11
-                    font.italic: true
-                    elide: Text.ElideRight
-                }
-            }
         }
     }
 
