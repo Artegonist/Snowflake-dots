@@ -97,12 +97,30 @@ Scope {
         }
     }
 
+    function volumesPreservingBalance(currentVolumes, targetAvg) {
+        if (!currentVolumes || currentVolumes.length === 0) return currentVolumes
+        const sum = currentVolumes.reduce((a, b) => a + b, 0)
+        const currentAvg = sum / currentVolumes.length
+        if (currentAvg <= 0.0001) {
+            return currentVolumes.map(() => targetAvg)
+        }
+        const scale = targetAvg / currentAvg
+        return currentVolumes.map(v => Math.max(0, Math.min(1, v * scale)))
+    }
+
     function setVolume(pct) {
         const sink = Pipewire.defaultAudioSink
         if (!sink?.ready || !sink.audio) return
         pct = Math.max(0, Math.min(100, pct))
-        sink.audio.muted = false
-        sink.audio.volume = pct / 100
+        const audio = sink.audio
+        audio.muted = false
+
+        const vols = audio.volumes
+        if (vols && vols.length > 0) {
+            audio.volumes = root.volumesPreservingBalance(vols, pct / 100)
+        } else {
+            audio.volume = pct / 100
+        }
     }
 
     function toggleMute() {
