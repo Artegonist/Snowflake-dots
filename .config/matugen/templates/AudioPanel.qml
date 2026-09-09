@@ -195,7 +195,8 @@ PanelWindow {
 
         readonly property bool muted: audio ? audio.muted : false
         readonly property real volume: audio ? audio.volume : 0
-        readonly property real frac: Math.max(0, Math.min(1, row.volume))
+        property real dragFrac: -1
+        readonly property real frac: row.dragFrac >= 0 ? row.dragFrac : Math.max(0, Math.min(1, row.volume))
 
         RowLayout {
             Layout.fillWidth: true
@@ -233,7 +234,7 @@ PanelWindow {
             }
 
             Text {
-                text: row.muted ? "выкл" : Math.round(row.volume * 100) + "%"
+                text: row.muted ? "выкл" : Math.round(row.frac * 100) + "%"
                 color: row.root.textDim
                 font.pixelSize: 12
             }
@@ -304,7 +305,9 @@ PanelWindow {
 
                 function setFromX(x) {
                     if (!row.audio) return
-                    const frac = Math.max(0, Math.min(1, x / track.width))
+                    const local = x - 4
+                    const frac = Math.max(0, Math.min(1, local / track.width))
+                    row.dragFrac = frac
                     row.audio.muted = false
                     const vols = row.audio.volumes
                     if (vols && vols.length > 1) {
@@ -316,6 +319,8 @@ PanelWindow {
 
                 onPressed: (mouse) => setFromX(mouse.x)
                 onPositionChanged: (mouse) => { if (pressed) setFromX(mouse.x) }
+                onReleased: row.dragFrac = -1
+                onCanceled: row.dragFrac = -1
                 onWheel: (wheel) => {
                     if (!row.audio) return
                     const step = wheel.angleDelta.y > 0 ? 0.02 : -0.02
@@ -345,7 +350,10 @@ PanelWindow {
         readonly property int rightIndex: balancer.channels.indexOf(PwAudioChannel.FrontRight)
         readonly property bool stereoAvailable: audio !== null && balancer.leftIndex !== -1 && balancer.rightIndex !== -1
 
+        property real dragBalance: -2
+
         readonly property real balance: {
+            if (balancer.dragBalance > -2) return balancer.dragBalance
             if (!balancer.stereoAvailable || !audio.volumes) return 0
             const l = audio.volumes[balancer.leftIndex]
             const r = audio.volumes[balancer.rightIndex]
@@ -450,13 +458,21 @@ PanelWindow {
                 cursorShape: Qt.PointingHandCursor
 
                 function setFromX(x) {
-                    const frac = Math.max(0, Math.min(1, x / balTrack.width))
-                    balancer.applyBalance(frac * 2 - 1)
+                    const local = x - 4
+                    const frac = Math.max(0, Math.min(1, local / balTrack.width))
+                    const b = frac * 2 - 1
+                    balancer.dragBalance = b
+                    balancer.applyBalance(b)
                 }
 
                 onPressed: (mouse) => setFromX(mouse.x)
                 onPositionChanged: (mouse) => { if (pressed) setFromX(mouse.x) }
-                onDoubleClicked: balancer.applyBalance(0)
+                onReleased: balancer.dragBalance = -2
+                onCanceled: balancer.dragBalance = -2
+                onDoubleClicked: {
+                    balancer.dragBalance = -2
+                    balancer.applyBalance(0)
+                }
                 onWheel: (wheel) => {
                     const step = wheel.angleDelta.y > 0 ? 0.05 : -0.05
                     balancer.applyBalance(balancer.balance + step)
@@ -567,7 +583,8 @@ PanelWindow {
                 hoverEnabled: true
 
                 function setFromY(y) {
-                    const frac = Math.max(0, Math.min(1, y / track.height))
+                    const local = y - 4
+                    const frac = Math.max(0, Math.min(1, local / track.height))
                     const v = Math.round(bandItem.maxGain - frac * bandItem.range)
                     if (v !== bandItem.value)
                         bandItem.changed(v)
@@ -864,8 +881,10 @@ PanelWindow {
 
             const script =
                 'mkdir -p "$HOME/.config/easyeffects/output" && ' +
-                'cat > "$HOME/.config/easyeffects/output/quickshell.json" <<\'QSEOF\'\n' +
+                'tmp="$(mktemp "$HOME/.config/easyeffects/output/.quickshell.json.XXXXXX")" && ' +
+                'cat > "$tmp" <<\'QSEOF\'\n' +
                 json + 'QSEOF\n' +
+                'mv -f "$tmp" "$HOME/.config/easyeffects/output/quickshell.json" && ' +
                 'easyeffects -l quickshell'
 
             if (backendProcess.running)
