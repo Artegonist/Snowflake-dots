@@ -25,7 +25,6 @@ window#waybar {
 
 #workspaces button:hover,
 #cava:hover,
-#clock:hover,
 #backlight:hover,
 #pulseaudio:hover,
 #network:hover,
@@ -46,6 +45,28 @@ window#waybar {
 #network,
 #pulseaudio {
     padding: 0 10px;
+}
+
+#clock {
+    padding: 0 14px;
+}
+
+#clock {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    text-shadow:
+        0 0 1px @clock_glow,
+        0 0 2px @clock_glow,
+        0 0 4px @clock_glow,
+        0 0 7px @clock_glow;
+}
+
+#clock:hover {
+    background-color: @hover_light;
+    border-radius: 10px;
+    color: @workspace_active;
+    text-shadow: none;
 }
 
 #workspaces button,
@@ -113,4 +134,3 @@ window#waybar {
 #custom-playbutton.stopped {
     opacity: 0.5;
 }
-
