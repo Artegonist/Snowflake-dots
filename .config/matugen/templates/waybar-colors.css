@@ -3,3 +3,4 @@
 @define-color workspace_active {{theme.workspace_active.hex}};
 @define-color hover_light {{theme.hover_light.hex}};
 @define-color accent_secondary {{theme.accent_secondary.hex}};
+@define-color clock_glow {{theme.clock_glow.hex}};
