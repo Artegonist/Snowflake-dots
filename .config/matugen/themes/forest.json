@@ -13,6 +13,7 @@
     "hover_light":        { "color": "#b7d3a8" },
     "hover_wofi_select":  { "color": "#b4dcc3" },
     "wofi_input_text":    { "color": "#e8f0ec" },
-    "wofi_accent_text":   { "color": "#cdd6f4" }
+    "wofi_accent_text":   { "color": "#cdd6f4" },
+    "clock_glow":         { "color": "#1b241c" }
   }
 }
