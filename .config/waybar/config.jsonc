@@ -6,7 +6,8 @@
     "spacing": 6,
     "modules-left": [
         "hyprland/workspaces",
-        "group/player"
+        "group/player",
+        "custom/petbutton"
     ],
     "modules-center": [
         "clock"
@@ -30,10 +31,15 @@
             "custom/nextbutton"
         ]
     },
+    "custom/petbutton": {
+        "format": "  ",
+        "tooltip": false,
+        "on-click": "qs -c pet-habitat ipc call petModule toggle"
+    },
     "custom/playbutton": {
         "exec": "~/.config/waybar/scripts/playbutton.sh",
         "return-type": "json",
-        "on-click": "playerctl play-pause",
+        "on-click": "~/.config/waybar/scripts/playbutton.sh toggle",
         "restart-interval": 5,
         "signal": 8,
         "interval": 1,
@@ -66,7 +72,9 @@
         "on-scroll-up": "qs -c osd-module ipc call osd incVolume -1",
         "on-scroll-down": "qs -c osd-module ipc call osd incVolume 1",
         "smooth-scrolling-threshold": 1,
-        "tooltip": false
+        "tooltip": false,
+        "min-length": 6,
+        "max-length": 6
     },
     "hyprland/workspaces": {
         "on-click": "activate",
@@ -90,9 +98,9 @@
         "format": "{icon}",
         "on-click": "qs -c wifi-panel ipc call wifi toggle",
         "format-wifi": "{icon} {essid}",
-        "format-ethernet": "󰈀 Проводная",
-        "format-disconnected": "󰤭 Нет сети",
-        "format-disabled": "󰤮 Отключен",
+        "format-ethernet": "󰈀",
+        "format-disconnected": "󰤭",
+        "format-disabled": "󰤮",
         "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
         "interval": 1,
         "tooltip": false,
@@ -129,6 +137,8 @@
             "󱩖",
             "󰛨"
         ],
+        "min-length": 8,
+        "max-length": 8
     }, 
     "group/sysinfo": {
         "orientation": "horizontal",
