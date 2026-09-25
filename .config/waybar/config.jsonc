@@ -95,7 +95,9 @@
         "format-disabled": "󰤮 Отключен",
         "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
         "interval": 1,
-        "tooltip": false
+        "tooltip": false,
+        "max-length": 9,
+        "min-length": 9
     },
     "bluetooth": {
         "format": " 󰂯 ",
