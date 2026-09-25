@@ -190,30 +190,28 @@ Scope {
         stdout: StdioCollector { id: capsLedPath }
     }
 
-    Timer {
-        id: capsPollTimer
-        interval: 200
-        running: capsLedPath.text.trim() !== ""
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: capsPollProc.running = true
-    }
-
-    Process {
-        id: capsPollProc
-        command: ["cat", capsLedPath.text.trim() + "/brightness"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const newState = this.text.trim() !== "0"
-                if (!root.capsReady) {
-                    root.capsOn = newState
-                    root.capsReady = true
-                } else if (newState !== root.capsOn) {
-                    root.capsOn = newState
-                    root.reveal("caps", 1400)
-                }
+    FileView {
+        id: capsLedFile
+        property string ledDir: capsLedPath.text.trim()
+        path: ledDir !== "" ? ledDir + "/brightness" : ""
+        onLoaded: {
+            const newState = text().trim() !== "0"
+            if (!root.capsReady) {
+                root.capsOn = newState
+                root.capsReady = true
+            } else if (newState !== root.capsOn) {
+                root.capsOn = newState
+                root.reveal("caps", 1400)
             }
         }
+    }
+
+    Timer {
+        interval: 100
+        running: capsLedFile.path !== ""
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: capsLedFile.reload()
     }
 
     // ------------------------- IPC ---------------------------------------
@@ -242,6 +240,45 @@ Scope {
 
     // --------------------------- UI --------------------------------------
 
+    // Держим окно (и его wl_surface / zwlr_layer_surface) полностью
+    // уничтоженным, когда OSD не показывается, и создаём заново
+    // при каждом reveal(). Раньше окно всегда было замаплено, и просто
+    // скрывалось через mask — Hyprland в таком случае держит последний
+    // закоммиченный буфер поверхности в памяти, и при быстром свайпе
+    // между рабочими столами иногда на кадр-другой показывает именно
+    // его — это и выглядит как "тень"/призрак сжатого OSD.
+    // Loader.active гарантирует настоящее destroy/create surface,
+    // так что закешировать что-либо просто не успевает.
+    property bool closing: false
+
+    onShowingChanged: {
+        if (showing) {
+            closing = false
+            closeTeardownTimer.stop()
+        } else {
+            closing = true
+            closeTeardownTimer.restart()
+        }
+    }
+
+    Timer {
+        id: closeTeardownTimer
+        // чуть больше длительности анимации схлопывания (380ms),
+        // чтобы окно не уничтожилось раньше, чем закроется визуально
+        interval: 450
+        repeat: false
+        onTriggered: root.closing = false
+    }
+
+    Loader {
+        id: notchLoader
+        active: root.showing || root.closing
+        sourceComponent: notchWindowComponent
+    }
+
+    Component {
+        id: notchWindowComponent
+
     PanelWindow {
         id: notchWindow
         screen: root.targetScreen
@@ -251,13 +288,17 @@ Scope {
         exclusiveZone: 0
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "quickshell:osd"
 
         property int activeWorkspaceWindows: 0
+        property int activeWindowFullscreenState: 0
         readonly property bool hasOpenWindows: activeWorkspaceWindows > 0
-        margins.bottom: hasOpenWindows ? -3 : -8
+        readonly property bool isRealFullscreen: activeWindowFullscreenState === 2
+        margins.bottom: (hasOpenWindows && !isRealFullscreen) ? -3 : -8
 
         function refreshActiveWorkspace() {
             activeWorkspaceProc.running = true
+            activeWindowProc.running = true
         }
 
         Component.onCompleted: refreshActiveWorkspace()
@@ -276,10 +317,33 @@ Scope {
             }
         }
 
+        Process {
+            id: activeWindowProc
+            command: ["hyprctl", "activewindow", "-j"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const data = JSON.parse(this.text)
+                        notchWindow.activeWindowFullscreenState = data.fullscreen ?? 0
+                    } catch (e) {
+                    }
+                }
+            }
+        }
+
         Connections {
             target: Hyprland
             function onRawEvent(event) {
                 notchWindow.refreshActiveWorkspace()
+                // Известный баг Hyprland: при быстрой смене воркспейса
+                // компоситор иногда на секунду-другую показывает старый
+                // закешированный кадр layer-shell поверхности вместо
+                // актуального (обычно — промежуточный кадр анимации).
+                // Форсируем перерисовку Canvas при любом событии
+                // компоситора, чтобы минимизировать шанс и длительность
+                // такого "призрака".
+                if (shapeCanvas.available)
+                    shapeCanvas.requestPaint()
             }
         }
 
@@ -502,5 +566,6 @@ Scope {
                 }
             }
         }
+    }
     }
 }
