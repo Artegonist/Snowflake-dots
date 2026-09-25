@@ -1,390 +1,571 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Services.Pipewire
 
-PanelWindow {
+Scope {
     id: root
 
-    //------------------STATE-----------------------
-    property bool menuVisible: false
-    property bool closing: false
-    visible: menuVisible || closing
+    property var targetScreen: Quickshell.screens[0]
 
-    color: "transparent"
-    focusable: true
-
-    //------------------COLORS-----------------------
-    readonly property color accentPrimary: "{{theme.accent_primary.hex}}"
-    readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
-    readonly property color bgPanel: "{{theme.bg_panel_battery.hex}}"
-    readonly property color bgTrack: "{{theme.bg_track.hex}}"
-    readonly property color borderColor: "{{theme.accent_primary.hex}}"
-    readonly property color textMain: "{{theme.text_main.hex}}"
-
-    //------------------LAYOUT-----------------------
-    anchors {
-        top: true
-        right: true
-    }
-    margins {
-        top: 3
-        right: 3
+    // ---- THEME --------------------------------------
+    QtObject {
+        id: theme
+        readonly property color accentPrimary:   "{{theme.accent_primary.hex}}"
+        readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
+        readonly property color bgPanel:         "{{theme.bg_panel_battery.hex}}"
+        readonly property color bgTrack:         "{{theme.bg_track.hex}}"
+        readonly property color borderColor:     "{{theme.accent_primary.hex}}"
+        readonly property color textMain:        "{{theme.text_main.hex}}"
     }
 
-    readonly property int fullWidth: 64
-    readonly property int fullHeight: 258
-    readonly property int lineThickness: 8
+    // ---- LAYOUT ---------------------------------------------
+    readonly property int earRadius: 8
+    readonly property int topRadius: 8
+    readonly property int borderWidth: 3
+    readonly property int topInset: borderWidth
+    readonly property int notchWidthFixed: 240
+    readonly property int notchHeightFixed: 70
 
-    property real animWidth: lineThickness
-    property real animHeight: 0
+    // ---- OSD STATE --------------------------------------------
+    property string activeControl: ""
+    property bool showing: false
 
-    implicitWidth: animWidth
-    implicitHeight: animHeight
+    property real volumePct: 0
+    property bool volumeMuted: false
+    property real brightnessPct: 0
+    property bool micOn: true
+    property bool capsOn: false
 
-    //------------------TOGGLE-----------------------
-    onMenuVisibleChanged: {
-        if (menuVisible) {
-            closeAnimation.stop()
-            closing = false
+    property bool brightnessReady: false
+    property bool capsReady: false
+    property bool oskReady: false
 
-            buttonsAppearAnimation.stop()
-            btn1.scale = 0
-            btn2.scale = 0
-            btn3.scale = 0
-            btn4.scale = 0
+    Timer {
+        interval: 500
+        running: true
+        repeat: false
+        onTriggered: root.oskReady = true
+    }
 
-            animWidth = lineThickness
-            animHeight = 0
-            openAnimation.restart()
-            panel.forceActiveFocus()
+    readonly property bool isSlider: activeControl === "vol" || activeControl === "bright"
+    readonly property int notchWidth: notchWidthFixed
+    readonly property int notchHeight: notchHeightFixed
+
+    Timer {
+        id: hideTimer
+        interval: 2200
+        onTriggered: root.showing = false
+    }
+
+    function reveal(activeName, autohideMs) {
+        activeControl = activeName
+        showing = true
+        hideTimer.interval = autohideMs || 2200
+        hideTimer.restart()
+    }
+
+    function holdOpen() {
+        hideTimer.stop()
+    }
+
+    // ---------- PIPEWIRE ----------------------------------------------
+    PwObjectTracker {
+        objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
+    }
+
+    Connections {
+        target: Pipewire.defaultAudioSink?.audio ?? null
+        function onVolumeChanged() {
+            root.volumePct = Math.round((Pipewire.defaultAudioSink?.audio.volume ?? 0) * 100)
+            root.volumeMuted = !!Pipewire.defaultAudioSink?.audio.muted
+            if (root.oskReady) root.reveal("vol", 2200)
+        }
+        function onMutedChanged() {
+            root.volumeMuted = !!Pipewire.defaultAudioSink?.audio.muted
+            if (root.oskReady) root.reveal("vol", 1600)
+        }
+    }
+
+    Connections {
+        target: Pipewire.defaultAudioSource?.audio ?? null
+        function onMutedChanged() {
+            root.micOn = !(Pipewire.defaultAudioSource?.audio.muted ?? true)
+            if (root.oskReady) root.reveal("mic", 1500)
+        }
+    }
+
+    function volumesPreservingBalance(currentVolumes, targetAvg) {
+        if (!currentVolumes || currentVolumes.length === 0) return currentVolumes
+        const sum = currentVolumes.reduce((a, b) => a + b, 0)
+        const currentAvg = sum / currentVolumes.length
+        if (currentAvg <= 0.0001) {
+            return currentVolumes.map(() => targetAvg)
+        }
+        const scale = targetAvg / currentAvg
+        return currentVolumes.map(v => Math.max(0, Math.min(1, v * scale)))
+    }
+
+    function setVolume(pct) {
+        const sink = Pipewire.defaultAudioSink
+        if (!sink?.ready || !sink.audio) return
+        pct = Math.max(0, Math.min(100, pct))
+        const audio = sink.audio
+        audio.muted = false
+
+        const vols = audio.volumes
+        if (vols && vols.length > 0) {
+            audio.volumes = root.volumesPreservingBalance(vols, pct / 100)
         } else {
-            openAnimation.stop()
-            buttonsAppearAnimation.stop()
-            closing = true
-            closeAnimation.restart()
+            audio.volume = pct / 100
         }
     }
 
-    //------------------ANIMATIONS-----------------------
-    SequentialAnimation {
-        id: openAnimation
-
-        NumberAnimation {
-            target: root
-            property: "animHeight"
-            to: root.fullHeight
-            duration: 220
-            easing.type: Easing.OutQuad
-        }
-        NumberAnimation {
-            target: root
-            property: "animWidth"
-            to: root.fullWidth
-            duration: 220
-            easing.type: Easing.OutQuad
-        }
-
-        onFinished: buttonsAppearAnimation.restart()
+    function toggleMute() {
+        const sink = Pipewire.defaultAudioSink
+        if (sink?.ready && sink.audio) sink.audio.muted = !sink.audio.muted
     }
 
-    SequentialAnimation {
-        id: buttonsAppearAnimation
+    function toggleMic() {
+        const src = Pipewire.defaultAudioSource
+        if (src?.ready && src.audio) src.audio.muted = !src.audio.muted
+    }
 
-        NumberAnimation {
-            target: btn1
-            property: "scale"
-            from: 0
-            to: 1
-            duration: 140
-            easing.type: Easing.OutBack
-        }
-        NumberAnimation {
-            target: btn2
-            property: "scale"
-            from: 0
-            to: 1
-            duration: 140
-            easing.type: Easing.OutBack
-        }
-        NumberAnimation {
-            target: btn3
-            property: "scale"
-            from: 0
-            to: 1
-            duration: 140
-            easing.type: Easing.OutBack
-        }
-        NumberAnimation {
-            target: btn4
-            property: "scale"
-            from: 0
-            to: 1
-            duration: 140
-            easing.type: Easing.OutBack
+    // ---------------------- BRIGHTNESSCTL ---------------------------------
+    property int maxBrightness: 100
+
+    Process {
+        id: maxBrightnessProc
+        command: ["brightnessctl", "max"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const n = parseInt(this.text.trim())
+                if (!isNaN(n) && n > 0) root.maxBrightness = n
+            }
         }
     }
 
-    SequentialAnimation {
-        id: closeAnimation
-
-        ParallelAnimation {
-            NumberAnimation {
-                target: btn1
-                property: "scale"
-                to: 0
-                duration: 110
-                easing.type: Easing.InQuad
+    FileView {
+        id: brightnessFile
+        path: "/sys/class/backlight/" + backlightDeviceName.text.trim() + "/brightness"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const n = parseInt(text().trim())
+            if (!isNaN(n) && root.maxBrightness > 0) {
+                root.brightnessPct = Math.round((n / root.maxBrightness) * 100)
+                if (root.brightnessReady) root.reveal("bright", 2200)
+                root.brightnessReady = true
             }
-            NumberAnimation {
-                target: btn2
-                property: "scale"
-                to: 0
-                duration: 110
-                easing.type: Easing.InQuad
-            }
-            NumberAnimation {
-                target: btn3
-                property: "scale"
-                to: 0
-                duration: 110
-                easing.type: Easing.InQuad
-            }
-            NumberAnimation {
-                target: btn4
-                property: "scale"
-                to: 0
-                duration: 110
-                easing.type: Easing.InQuad
-            }
-        }
-        NumberAnimation {
-            target: root
-            property: "animWidth"
-            to: root.lineThickness
-            duration: 180
-            easing.type: Easing.InQuad
-        }
-        NumberAnimation {
-            target: root
-            property: "animHeight"
-            to: 0
-            duration: 180
-            easing.type: Easing.InQuad
-        }
-
-        ScriptAction {
-            script: root.closing = false
         }
     }
 
-    //------------------IPC-----------------------
+    Process {
+        id: backlightDeviceProc
+        command: ["sh", "-c", "ls /sys/class/backlight | head -n1"]
+        running: true
+        stdout: StdioCollector { id: backlightDeviceName }
+    }
+
+    function setBrightness(pct) {
+        pct = Math.max(1, Math.min(100, pct))
+        root.brightnessPct = pct
+        setBrightnessProc.command = ["brightnessctl", "set", pct + "%"]
+        setBrightnessProc.running = true
+        root.reveal("bright", 2200)
+    }
+
+    Process {
+        id: setBrightnessProc
+    }
+
+    // ------------------------ CAPS --------------------------------
+    Process {
+        id: capsLedFindProc
+        command: ["sh", "-c", "ls -d /sys/class/leds/*capslock* 2>/dev/null | head -n1"]
+        running: true
+        stdout: StdioCollector { id: capsLedPath }
+    }
+
+    FileView {
+        id: capsLedFile
+        property string ledDir: capsLedPath.text.trim()
+        path: ledDir !== "" ? ledDir + "/brightness" : ""
+        onLoaded: {
+            const newState = text().trim() !== "0"
+            if (!root.capsReady) {
+                root.capsOn = newState
+                root.capsReady = true
+            } else if (newState !== root.capsOn) {
+                root.capsOn = newState
+                root.reveal("caps", 1400)
+            }
+        }
+    }
+
+    Timer {
+        interval: 100
+        running: capsLedFile.path !== ""
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: capsLedFile.reload()
+    }
+
+    // ------------------------- IPC ---------------------------------------
     IpcHandler {
-        target: "powermenu"
+        target: "osd"
 
-        function toggle(): void {
-            root.menuVisible = !root.menuVisible
+        function incVolume(delta: int): void {
+            root.setVolume(root.volumePct + delta)
         }
-
-        function show(): void {
-            root.menuVisible = true
+        function setVolumeAbs(pct: int): void {
+            root.setVolume(pct)
         }
-
-        function hide(): void {
-            root.menuVisible = false
+        function muteToggle(): void {
+            root.toggleMute()
+        }
+        function incBrightness(delta: int): void {
+            root.setBrightness(root.brightnessPct + delta)
+        }
+        function setBrightnessAbs(pct: int): void {
+            root.setBrightness(pct)
+        }
+        function micToggle(): void {
+            root.toggleMic()
         }
     }
 
-    HyprlandFocusGrab {
-        id: grab
-        windows: [root]
-        active: root.menuVisible
-        onCleared: root.menuVisible = false
+    // --------------------------- UI --------------------------------------
+
+    // Держим окно (и его wl_surface / zwlr_layer_surface) полностью
+    // уничтоженным, когда OSD не показывается, и создаём заново
+    // при каждом reveal(). Раньше окно всегда было замаплено, и просто
+    // скрывалось через mask — Hyprland в таком случае держит последний
+    // закоммиченный буфер поверхности в памяти, и при быстром свайпе
+    // между рабочими столами иногда на кадр-другой показывает именно
+    // его — это и выглядит как "тень"/призрак сжатого OSD.
+    // Loader.active гарантирует настоящее destroy/create surface,
+    // так что закешировать что-либо просто не успевает.
+    property bool closing: false
+
+    onShowingChanged: {
+        if (showing) {
+            closing = false
+            closeTeardownTimer.stop()
+        } else {
+            closing = true
+            closeTeardownTimer.restart()
+        }
     }
 
-    //------------------POWERBUTTON-----------------------
-    component PowerButton: Rectangle {
-        id: btn
+    Timer {
+        id: closeTeardownTimer
+        // чуть больше длительности анимации схлопывания (380ms),
+        // чтобы окно не уничтожилось раньше, чем закроется визуально
+        interval: 450
+        repeat: false
+        onTriggered: root.closing = false
+    }
 
-        property string iconText: ""
-        signal clicked()
+    Loader {
+        id: notchLoader
+        active: root.showing || root.closing
+        sourceComponent: notchWindowComponent
+    }
 
-        readonly property int holdDuration: 1500
+    Component {
+        id: notchWindowComponent
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: 52
+    PanelWindow {
+        id: notchWindow
+        screen: root.targetScreen
+        anchors { bottom: true }
+        implicitWidth: root.notchWidth + 2 * root.earRadius
+        implicitHeight: root.notchHeight + root.earRadius + root.topInset
+        exclusiveZone: 0
+        color: "transparent"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "quickshell:osd"
 
-        scale: 0
-        radius: 10
-        border.width: mouseArea.pressed ? 2 : 1
-        border.color: root.accentSecondary
-        color: mouseArea.pressed ? root.bgPanel : (mouseArea.containsMouse ? root.accentSecondary : root.accentPrimary)
-        clip: true
+        property int activeWorkspaceWindows: 0
+        property int activeWindowFullscreenState: 0
+        readonly property bool hasOpenWindows: activeWorkspaceWindows > 0
+        readonly property bool isRealFullscreen: activeWindowFullscreenState === 2
+        margins.bottom: (hasOpenWindows && !isRealFullscreen) ? -3 : -8
 
-        Behavior on color {
-            ColorAnimation { duration: 120 }
+        function refreshActiveWorkspace() {
+            activeWorkspaceProc.running = true
+            activeWindowProc.running = true
         }
-        Behavior on border.width {
-            NumberAnimation { duration: 120 }
-        }
 
-        Rectangle {
-            id: holdFill
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 0
-            radius: btn.radius
-            color: "transparent"
-            clip: true
+        Component.onCompleted: refreshActiveWorkspace()
 
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                height: btn.height
-                radius: btn.radius
-                color: root.accentPrimary
+        Process {
+            id: activeWorkspaceProc
+            command: ["hyprctl", "activeworkspace", "-j"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const data = JSON.parse(this.text)
+                        notchWindow.activeWorkspaceWindows = data.windows ?? 0
+                    } catch (e) {
+                    }
+                }
             }
         }
 
-        readonly property real holdRemaining: btn.holdDuration / 1000 * (1 - holdFill.height / btn.height)
-
-        NumberAnimation {
-            id: holdAnimation
-            target: holdFill
-            property: "height"
-            from: 0
-            to: btn.height
-            duration: btn.holdDuration
-            easing.type: Easing.Linear
-            onFinished: btn.clicked()
+        Process {
+            id: activeWindowProc
+            command: ["hyprctl", "activewindow", "-j"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const data = JSON.parse(this.text)
+                        notchWindow.activeWindowFullscreenState = data.fullscreen ?? 0
+                    } catch (e) {
+                    }
+                }
+            }
         }
 
-        Text {
-            anchors.centerIn: parent
-            text: mouseArea.pressed ? btn.holdRemaining.toFixed(1) : btn.iconText
-            color: mouseArea.pressed ? root.accentPrimary : root.bgPanel
-            font.pixelSize: mouseArea.pressed ? 16 : 20
-            font.family: "Symbols Nerd Font"
-
-            Behavior on color {
-                ColorAnimation { duration: 120 }
+        Connections {
+            target: Hyprland
+            function onRawEvent(event) {
+                notchWindow.refreshActiveWorkspace()
+                // Известный баг Hyprland: при быстрой смене воркспейса
+                // компоситор иногда на секунду-другую показывает старый
+                // закешированный кадр layer-shell поверхности вместо
+                // актуального (обычно — промежуточный кадр анимации).
+                // Форсируем перерисовку Canvas при любом событии
+                // компоситора, чтобы минимизировать шанс и длительность
+                // такого "призрака".
+                if (shapeCanvas.available)
+                    shapeCanvas.requestPaint()
             }
+        }
+
+        mask: Region {
+            item: revealMask
         }
 
         Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: holdFill.height
-            clip: true
-
-            Text {
-                text: mouseArea.pressed ? btn.holdRemaining.toFixed(1) : ""
-                color: root.bgPanel
-                font.pixelSize: 16
-                font.family: "Symbols Nerd Font"
-                x: (btn.width - width) / 2
-                y: holdFill.height - (btn.height + height) / 2
-            }
-        }
-
-        MouseArea {
-            id: mouseArea
+            id: cardVisual
             anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
 
-            onPressed: {
-                holdFill.height = 0
-                holdAnimation.restart()
+            property real hn: root.showing ? root.notchHeight : 0
+            
+            Behavior on hn {
+                NumberAnimation {
+                    duration: 380
+                    easing.type: root.showing ? Easing.OutCubic : Easing.InCubic
+                }
             }
-            onReleased: {
-                holdAnimation.stop()
-                holdFill.height = 0
-            }
-            onCanceled: {
-                holdAnimation.stop()
-                holdFill.height = 0
+
+            Item {
+                id: revealMask
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: root.notchHeight > 0
+                        ? (cardVisual.hn / root.notchHeight) * (root.notchHeight + root.earRadius + root.topInset)
+                        : 0
+                clip: true
+
+                Item {
+                    id: fullCard
+                    width: parent.width
+                    height: root.notchHeight + root.earRadius + root.topInset
+                    anchors.bottom: parent.bottom
+
+                    Canvas {
+                        id: shapeCanvas
+                        anchors.fill: parent
+                        renderTarget: Canvas.FramebufferObject
+
+                        property real w: root.notchWidth   
+                        property real h: root.notchHeight  
+                        property real rc: root.earRadius
+                        property real rt: root.topRadius
+
+                        onWidthChanged: requestPaint()
+                        onHeightChanged: requestPaint()
+                        Component.onCompleted: requestPaint()
+                        onPaint: {
+                            const ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.translate(0, root.topInset)
+
+                            const wn = w   
+                            const hn = h   
+                            const rcx = rc
+                            const rcv = Math.min(rc, Math.max(0, hn))
+                            const rt_ = Math.min(rt, hn)
+
+                            ctx.beginPath()
+                            ctx.moveTo(rcx + rt_, 0)
+                            ctx.lineTo(rcx + wn - rt_, 0)
+                            ctx.arc(rcx + wn - rt_, rt_, rt_, -Math.PI / 2, 0, false)
+                            ctx.lineTo(rcx + wn, hn - rcv)
+                            ctx.arc(wn + 2 * rcx, hn - rcv, rcv, Math.PI, Math.PI / 2, true)
+                            ctx.lineTo(0, hn)
+                            ctx.arc(0, hn - rcv, rcv, Math.PI / 2, 0, true)
+                            ctx.lineTo(rcx, rt_)
+                            ctx.arc(rcx + rt_, rt_, rt_, Math.PI, 3 * Math.PI / 2, false)
+                            ctx.closePath()
+
+                            ctx.fillStyle = theme.bgPanel
+                            ctx.fill()
+
+                            ctx.beginPath()
+                            ctx.moveTo(0, hn)
+                            ctx.arc(0, hn - rcv, rcv, Math.PI / 2, 0, true)
+                            ctx.lineTo(rcx, rt_)
+                            ctx.arc(rcx + rt_, rt_, rt_, Math.PI, 3 * Math.PI / 2, false)
+                            ctx.lineTo(rcx + wn - rt_, 0)
+                            ctx.arc(rcx + wn - rt_, rt_, rt_, -Math.PI / 2, 0, false)
+                            ctx.lineTo(rcx + wn, hn - rcv)
+                            ctx.arc(wn + 2 * rcx, hn - rcv, rcv, Math.PI, Math.PI / 2, true)
+
+                            ctx.lineWidth = root.borderWidth
+                            ctx.strokeStyle = theme.borderColor
+                            ctx.stroke()
+                        }
+                    }
+
+                    // ---- CONTENT ----
+                    Item {
+                        anchors.fill: parent
+                        anchors.topMargin: root.topInset
+                        anchors.bottomMargin: root.earRadius
+                        anchors.leftMargin: root.earRadius
+                        anchors.rightMargin: root.earRadius
+                        clip: true
+                        opacity: root.notchHeight > 0 ? cardVisual.hn / root.notchHeight : 0
+
+                        Row {
+                            id: miniRow
+                            anchors.centerIn: parent
+                            spacing: 10
+                            visible: !root.isSlider
+
+                            Rectangle {
+                                width: 8; height: 8; radius: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: theme.accentPrimary
+                                visible: (root.activeControl === "mic" && root.micOn) ||
+                                         (root.activeControl === "caps" && root.capsOn)
+                            }
+                            Rectangle {
+                                width: 8; height: 8; radius: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: theme.bgTrack
+                                visible: (root.activeControl === "mic" && !root.micOn) ||
+                                         (root.activeControl === "caps" && !root.capsOn)
+                            }
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                font.pixelSize: 13
+                                color: theme.textMain
+                                text: root.activeControl === "mic"
+                                      ? "Микрофон " + (root.micOn ? "ВКЛ" : "ВЫКЛ")
+                                      : "КАПС " + (root.capsOn ? "ВКЛ" : "ВЫКЛ")
+                            }
+                        }
+
+                        Column {
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 6
+                            visible: root.isSlider
+
+                            Item {
+                                width: parent.width
+                                height: Math.max(labelText.implicitHeight, pctText.implicitHeight)
+
+                                Text {
+                                    id: labelText
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: root.activeControl === "vol" ? "Громкость" : "Яркость"
+                                    font.pixelSize: 14
+                                    color: theme.textMain
+                                }
+                                Text {
+                                    id: pctText
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: root.activeControl === "vol"
+                                          ? (root.volumeMuted ? "ВЫКЛ" : root.volumePct + "%")
+                                          : root.brightnessPct + "%"
+                                    font.pixelSize: 14
+                                    color: theme.textMain
+                                }
+                            }
+
+                            Item {
+                                id: sliderTrack
+                                width: parent.width
+                                height: 16
+
+                                readonly property real pct: root.activeControl === "vol" ? root.volumePct : root.brightnessPct
+
+                                Rectangle {
+                                    id: track
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: parent.width
+                                    height: 8
+                                    radius: 4
+                                    color: theme.bgTrack
+
+                                    Rectangle {
+                                        width: track.width * (sliderTrack.pct / 100)
+                                        height: parent.height
+                                        radius: 4
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop { position: 0.0; color: theme.accentSecondary }
+                                            GradientStop { position: 1.0; color: theme.accentPrimary }
+                                        }
+                                        Behavior on width {
+                                            enabled: !dragArea.pressed
+                                            NumberAnimation { duration: 160 }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 14; height: 14; radius: 7
+                                    color: theme.textMain
+                                    y: track.y + track.height / 2 - 7
+                                    x: Math.max(0, Math.min(track.width - width, track.width * (sliderTrack.pct / 100) - width / 2))
+                                    Behavior on x {
+                                        enabled: !dragArea.pressed
+                                        NumberAnimation { duration: 160 }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: dragArea
+                                    anchors.fill: parent
+                                    onPressed: (mouse) => { root.holdOpen(); update(mouse.x) }
+                                    onPositionChanged: (mouse) => { if (pressed) update(mouse.x) }
+                                    onReleased: root.reveal(root.activeControl, 1800)
+
+                                    function update(x) {
+                                        const pct = Math.round((x / width) * 100)
+                                        if (root.activeControl === "vol") root.setVolume(pct)
+                                        else root.setBrightness(pct)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-
-    //------------------PANEL-----------------------
-    Rectangle {
-        id: panel
-        anchors.fill: parent
-        color: root.bgPanel
-        radius: Math.min(8, root.animWidth / 2, root.animHeight / 2)
-        border.width: 3
-        border.color: root.borderColor
-
-        focus: true
-        Keys.onEscapePressed: root.menuVisible = false
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 10
-            spacing: 10
-
-            PowerButton {
-                id: btn1
-                iconText: "\uf011"
-                onClicked: {
-                    root.menuVisible = false
-                    poweroffProcess.running = true
-                }
-            }
-
-            PowerButton {
-                id: btn2
-                iconText: "\uf021"
-                onClicked: {
-                    root.menuVisible = false
-                    rebootProcess.running = true
-                }
-            }
-
-            PowerButton {
-                id: btn3
-                iconText: "\uf08b"
-                onClicked: {
-                    root.menuVisible = false
-                    exitProcess.running = true
-                }
-            }
-
-            PowerButton {
-                id: btn4
-                iconText: "\uf023"
-                onClicked: {
-                    root.menuVisible = false
-                    lockProcess.running = true
-                }
-            }
-        }
-    }
-
-    //------------------PROCESSES-----------------------
-    Process {
-        id: poweroffProcess
-        command: ["systemctl", "poweroff"]
-    }
-
-    Process {
-        id: rebootProcess
-        command: ["systemctl", "reboot"]
-    }
-
-    Process {
-        id: exitProcess
-        command: ["bash", "-c", "loginctl terminate-session $XDG_SESSION_ID && uwsm stop"]
-    }
-
-    Process {
-        id: lockProcess
-        command: ["hyprlock"]
     }
 }
