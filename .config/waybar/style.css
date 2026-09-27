@@ -49,9 +49,6 @@ window#waybar {
 
 #clock {
     padding: 0 14px;
-}
-
-#clock {
     background-color: transparent;
     border: none;
     box-shadow: none;
@@ -80,7 +77,6 @@ window#waybar {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 18px;
 }
-
 
 #sysinfo {
     border: 2px solid @hover_light;
@@ -133,4 +129,25 @@ window#waybar {
 
 #custom-playbutton.stopped {
     opacity: 0.5;
+}
+
+/* Иконки окон активного рабочего стола */
+#taskbar button {
+    background-color: transparent;
+    color: @text_waybar;
+    border: none;
+    border-radius: 10px;
+    padding: 0 8px;
+    margin: 0px;
+    transition: all 0.2s ease;
+}
+
+#taskbar button.active {
+    background-color: @workspace_active;
+    color: @bg_panel_waybar;
+}
+
+#taskbar button:hover {
+    background-color: @hover_light;
+    color: @workspace_active;
 }
