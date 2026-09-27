@@ -8,10 +8,10 @@ import Quickshell.Bluetooth
 PanelWindow {
     id: root
 
-    // WINDOW
+    //----------------WINDOW----------------
     visible: false
     focusable: true
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     property bool expanded: false
     property bool closing: false
@@ -68,7 +68,7 @@ PanelWindow {
     implicitWidth: 380
     implicitHeight: 540
 
-    // THEME
+    //----------------COLORS----------------
     readonly property color accentPrimary:   "#5fa77c"
     readonly property color accentSecondary: "#446b56"
     readonly property color bgPanelWaybar:   "#1b241c"
@@ -87,43 +87,23 @@ PanelWindow {
     readonly property color borderColor: accentPrimary
     readonly property color separatorColor: Qt.rgba(1, 1, 1, 0.08)
 
-    // STATE
+    //----------------STATE----------------
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool btEnabled: root.adapter ? root.adapter.enabled : false
     readonly property bool scanning: root.adapter ? root.adapter.discovering : false
     readonly property var allDevices: root.adapter ? root.adapter.devices.values : []
 
-    readonly property var rawConnectedDevice: {
-        for (const d of root.allDevices) {
-            if (d.connected) return d
-        }
-        return null
+    readonly property var connectedDevicesList: {
+        const arr = root.allDevices.filter(function(d) { return d.connected })
+        arr.sort(function(a, b) { return (a.name || "").localeCompare(b.name || "") })
+        return arr
     }
-
-    property var connectedDevice: null
-
-    onRawConnectedDeviceChanged: {
-        if (root.rawConnectedDevice !== null) {
-            connectedDropTimer.stop()
-            root.connectedDevice = root.rawConnectedDevice
-        } else if (root.connectedDevice !== null) {
-            connectedDropTimer.restart()
-        }
-    }
-
-    Timer {
-        id: connectedDropTimer
-        interval: 700
-        repeat: false
-        onTriggered: {
-            if (root.rawConnectedDevice === null)
-                root.connectedDevice = null
-        }
-    }
+    readonly property int connectedCount: root.connectedDevicesList.length
+    readonly property var connectedDevice: root.connectedCount > 0 ? root.connectedDevicesList[0] : null
 
     readonly property var listDevices: {
         const list = root.allDevices.filter(function(d) {
-            return root.connectedDevice ? d.dbusPath !== root.connectedDevice.dbusPath : true
+            return !d.connected
         })
         list.sort(function(a, b) {
             if (a.paired !== b.paired) return a.paired ? -1 : 1
@@ -132,12 +112,26 @@ PanelWindow {
         return list
     }
 
-    // OPS
+    //----------------OPS----------------
     property var deviceOps: ({})
     property int opsVersion: 0
     property string errorText: ""
 
-    // AUTOCONNECT
+    onErrorTextChanged: {
+        if (root.errorText !== "")
+            errorTextTimer.restart()
+        else
+            errorTextTimer.stop()
+    }
+
+    Timer {
+        id: errorTextTimer
+        interval: 4000
+        repeat: false
+        onTriggered: root.errorText = ""
+    }
+
+    //----------------AUTOCONNECT----------------
     property var autoConnectAttempts: ({})
     readonly property int autoConnectCooldownMs: 20000
     property var wasOursAt: ({})
@@ -180,7 +174,7 @@ PanelWindow {
         }
     }
 
-    // FUNCTIONS
+    //----------------FUNCTIONS----------------
     function refreshAll() {
         root.scanDevices()
     }
@@ -259,7 +253,7 @@ PanelWindow {
         delete wo[device.dbusPath]
         root.wasOursAt = wo
         const attempts = root.autoConnectAttempts
-        delete attempts[device.dbusPath]
+        attempts[device.dbusPath] = Date.now()
         root.autoConnectAttempts = attempts
         device.connected = false
     }
@@ -319,7 +313,7 @@ PanelWindow {
         return "доступно"
     }
 
-    // REACTIVE
+    //----------------REACTIVE----------------
     Repeater {
         model: root.allDevices
         delegate: Item {
@@ -406,7 +400,7 @@ PanelWindow {
         }
     }
 
-    // TIMERS
+    //----------------TIMERS----------------
     Timer {
         interval: 12000
         running: root.expanded && root.btEnabled
@@ -437,9 +431,7 @@ PanelWindow {
         const wo = root.wasOursAt
         let woChanged = false
         for (const d of root.allDevices) {
-            const debouncedAsConnected = root.connectedDevice !== null
-                && root.connectedDevice.dbusPath === d.dbusPath
-            if (d.connected || debouncedAsConnected) {
+            if (d.connected) {
                 wo[d.dbusPath] = now
                 woChanged = true
                 continue
@@ -461,7 +453,7 @@ PanelWindow {
         if (!root.expanded) root.stopScan()
     }
 
-    // FOCUS
+    //----------------FOCUS----------------
     HyprlandFocusGrab {
         id: focusGrab
         windows: [root]
@@ -473,7 +465,7 @@ PanelWindow {
             root.expanded = true
     }
 
-    // LAYOUT
+    //----------------LAYOUT----------------
     Rectangle {
         id: card
         anchors.fill: parent
@@ -490,7 +482,7 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: root.hide()
 
-        // ANIMATIONS
+        //----------------ANIMATIONS----------------
         SequentialAnimation {
             id: openAnim
 
@@ -559,14 +551,14 @@ PanelWindow {
             }
         }
 
-        // CONTENT
+        //----------------CONTENT----------------
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 24
             spacing: 14
             visible: root.btEnabled
 
-            // HEADER
+            //----------------HEADER----------------
             ColumnLayout {
                 id: topSection
                 Layout.fillWidth: true
@@ -591,7 +583,9 @@ PanelWindow {
 
                     Text {
                         text: root.btEnabled
-                              ? (root.connectedDevice ? root.connectedDevice.name : "Bluetooth")
+                              ? (root.connectedCount > 1
+                                     ? root.connectedDevice.name + " +" + (root.connectedCount - 1)
+                                     : (root.connectedDevice ? root.connectedDevice.name : "Bluetooth"))
                               : "Bluetooth выключен"
                         color: root.textMain
                         font.pixelSize: 18
@@ -609,11 +603,11 @@ PanelWindow {
                     }
                 }
 
-                // CONNECTED
+                //----------------CONNECTED----------------
                 Rectangle {
                     id: connectionInfo
                     Layout.fillWidth: true
-                    visible: root.btEnabled && root.connectedDevice !== null
+                    visible: root.btEnabled
                     clip: true
                     implicitHeight: connectionColumn.implicitHeight + 20
                     radius: 10
@@ -628,9 +622,11 @@ PanelWindow {
                     transformOrigin: Item.Center
 
                     readonly property bool disconnecting: {
-                        if (root.connectedDevice === null) return false
-                        const op = root.opFor(root.connectedDevice.dbusPath)
-                        return !!op && !op.auto
+                        for (const d of root.connectedDevicesList) {
+                            const op = root.opFor(d.dbusPath)
+                            if (op && !op.auto) return true
+                        }
+                        return false
                     }
 
                     ParallelAnimation {
@@ -663,15 +659,15 @@ PanelWindow {
                         }
                     }
 
-                    property string _lastPoppedPath: ""
+                    property string _lastPoppedKey: ""
 
                     Connections {
                         target: root
-                        function onConnectedDeviceChanged() {
-                            const path = root.connectedDevice ? root.connectedDevice.dbusPath : ""
-                            if (path === connectionInfo._lastPoppedPath) return
-                            connectionInfo._lastPoppedPath = path
-                            if (root.expanded && root.btEnabled && root.connectedDevice !== null)
+                        function onConnectedDevicesListChanged() {
+                            const key = root.connectedDevicesList.map(function(d) { return d.dbusPath }).join(",")
+                            if (key === connectionInfo._lastPoppedKey) return
+                            connectionInfo._lastPoppedKey = key
+                            if (root.expanded && root.btEnabled && root.connectedCount > 0)
                                 connectionStateAnim.restart()
                         }
                     }
@@ -713,150 +709,197 @@ PanelWindow {
                         id: connectionColumn
                         anchors.fill: parent
                         anchors.margins: 10
-                        spacing: 8
-
-                        readonly property real actionButtonWidth:
-                            Math.max(forgetLabel.implicitWidth, disconnectLabel.implicitWidth) + 20
+                        spacing: 10
 
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
+                            visible: root.connectedCount === 0
 
-                            Rectangle {
-                                width: 22; height: 22; radius: 11
-                                color: gearArea.containsMouse ? root.accentSecondary : "transparent"
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "󰒓"
-                                    font.pixelSize: 12
-                                    color: root.textDim
-                                }
-                                MouseArea {
-                                    id: gearArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.openDeviceSettings(root.connectedDevice)
-                                }
-                            }
-
-                            RowLayout {
-                                spacing: 4
-                                visible: root.connectedDevice && root.connectedDevice.batteryAvailable
-                                Text {
-                                    text: root.connectedDevice ? root.batteryText(root.connectedDevice) : ""
-                                    color: root.textDim
-                                    font.pixelSize: 12
-                                }
-                                Text {
-                                    text: root.connectedDevice
-                                          ? root.batteryIcon(Math.round(root.connectedDevice.battery * 100)) : ""
-                                    font.pixelSize: 13
-                                    color: root.accentPrimary
-                                }
+                            Text {
+                                text: "󰂲"
+                                font.pixelSize: 13
+                                color: root.accentPrimary
                             }
 
                             Text {
-                                text: root.connectedDevice ? root.connectedDevice.name : ""
+                                text: "Нет подключённых устройств"
                                 color: root.textMain
                                 font.pixelSize: 13
                                 elide: Text.ElideRight
-                                horizontalAlignment: Text.AlignRight
                                 Layout.fillWidth: true
                             }
-
-                            Item {
-                                width: 16; height: 16
-
-                                readonly property string iconPath:
-                                    root.connectedDevice ? root.safeIconPath(root.connectedDevice.icon) : ""
-
-                                Image {
-                                    anchors.fill: parent
-                                    visible: parent.iconPath !== ""
-                                    source: parent.iconPath
-                                }
-                                Text {
-                                    anchors.centerIn: parent
-                                    visible: parent.iconPath === ""
-                                    text: root.connectedDevice ? root.fallbackGlyph(root.connectedDevice.icon) : "󰂯"
-                                    font.pixelSize: 12
-                                    color: root.textDim
-                                }
-                            }
                         }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
+                        Repeater {
+                            model: root.connectedDevicesList
 
-                            Rectangle {
-                                implicitWidth: connectionColumn.actionButtonWidth
-                                height: 28
-                                radius: 10
-                                color: disconnectArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
-                                       : disconnectArea.containsMouse ? root.accentSecondary : root.accentPrimary
-                                scale: disconnectArea.pressed ? 0.95 : 1.0
+                            delegate: ColumnLayout {
+                                id: connectedBlock
+                                required property var modelData
+                                required property int index
+                                Layout.fillWidth: true
+                                spacing: 8
+                                scale: 1
+                                transformOrigin: Item.Center
 
-                                Behavior on color { ColorAnimation { duration: 120 } }
-                                Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                                readonly property real actionButtonWidth:
+                                    Math.max(forgetLabel.implicitWidth, disconnectLabel.implicitWidth) + 20
 
-                                Text {
-                                    id: disconnectLabel
-                                    anchors.centerIn: parent
-                                    text: "Отключить"
-                                    color: root.bgPanel
-                                    font.pixelSize: 12
+                                Component.onCompleted: connectBounce.start()
+
+                                SequentialAnimation {
+                                    id: connectBounce
+                                    NumberAnimation {
+                                        target: connectedBlock; property: "scale"
+                                        to: 1.035; duration: 130; easing.type: Easing.OutCubic
+                                    }
+                                    NumberAnimation {
+                                        target: connectedBlock; property: "scale"
+                                        to: 1.0; duration: 220; easing.type: Easing.OutBack; easing.overshoot: 2.0
+                                    }
                                 }
 
-                                MouseArea {
-                                    id: disconnectArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.disconnectDevice(root.connectedDevice)
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Rectangle {
+                                        width: 22; height: 22; radius: 11
+                                        color: gearArea.containsMouse ? root.accentSecondary : "transparent"
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "󰒓"
+                                            font.pixelSize: 12
+                                            color: root.textDim
+                                        }
+                                        MouseArea {
+                                            id: gearArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.openDeviceSettings(connectedBlock.modelData)
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        spacing: 4
+                                        visible: connectedBlock.modelData.batteryAvailable
+                                        Text {
+                                            text: root.batteryText(connectedBlock.modelData)
+                                            color: root.textDim
+                                            font.pixelSize: 12
+                                        }
+                                        Text {
+                                            text: root.batteryIcon(Math.round(connectedBlock.modelData.battery * 100))
+                                            font.pixelSize: 13
+                                            color: root.accentPrimary
+                                        }
+                                    }
+
+                                    Text {
+                                        text: connectedBlock.modelData.name
+                                        color: root.textMain
+                                        font.pixelSize: 13
+                                        elide: Text.ElideRight
+                                        horizontalAlignment: Text.AlignRight
+                                        Layout.fillWidth: true
+                                    }
+
+                                    Item {
+                                        width: 16; height: 16
+
+                                        readonly property string iconPath:
+                                            root.safeIconPath(connectedBlock.modelData.icon)
+
+                                        Image {
+                                            anchors.fill: parent
+                                            visible: parent.iconPath !== ""
+                                            source: parent.iconPath
+                                        }
+                                        Text {
+                                            anchors.centerIn: parent
+                                            visible: parent.iconPath === ""
+                                            text: root.fallbackGlyph(connectedBlock.modelData.icon)
+                                            font.pixelSize: 12
+                                            color: root.textDim
+                                        }
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    Rectangle {
+                                        implicitWidth: connectedBlock.actionButtonWidth
+                                        height: 28
+                                        radius: 10
+                                        color: disconnectArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
+                                               : disconnectArea.containsMouse ? root.accentSecondary : root.accentPrimary
+                                        scale: disconnectArea.pressed ? 0.95 : 1.0
+
+                                        Behavior on color { ColorAnimation { duration: 120 } }
+                                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+
+                                        Text {
+                                            id: disconnectLabel
+                                            anchors.centerIn: parent
+                                            text: "Отключить"
+                                            color: root.bgPanel
+                                            font.pixelSize: 12
+                                        }
+
+                                        MouseArea {
+                                            id: disconnectArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.disconnectDevice(connectedBlock.modelData)
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        implicitWidth: connectedBlock.actionButtonWidth
+                                        height: 28
+                                        radius: 10
+                                        color: forgetArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
+                                               : forgetArea.containsMouse ? root.accentSecondary : root.accentPrimary
+                                        scale: forgetArea.pressed ? 0.95 : 1.0
+
+                                        Behavior on color { ColorAnimation { duration: 120 } }
+                                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+
+                                        Text {
+                                            id: forgetLabel
+                                            anchors.centerIn: parent
+                                            text: "Забыть"
+                                            color: root.bgPanel
+                                            font.pixelSize: 12
+                                        }
+
+                                        MouseArea {
+                                            id: forgetArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.forgetDevice(connectedBlock.modelData)
+                                        }
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 2
+                                    height: 1
+                                    color: root.separatorColor
+                                    visible: connectedBlock.index < root.connectedCount - 1
                                 }
                             }
-
-                            Rectangle {
-                                implicitWidth: connectionColumn.actionButtonWidth
-                                height: 28
-                                radius: 10
-                                color: forgetArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
-                                       : forgetArea.containsMouse ? root.accentSecondary : root.accentPrimary
-                                scale: forgetArea.pressed ? 0.95 : 1.0
-
-                                Behavior on color { ColorAnimation { duration: 120 } }
-                                Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                                Text {
-                                    id: forgetLabel
-                                    anchors.centerIn: parent
-                                    text: "Забыть"
-                                    color: root.bgPanel
-                                    font.pixelSize: 12
-                                }
-
-                                MouseArea {
-                                    id: forgetArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.forgetDevice(root.connectedDevice)
-                                }
-                            }
-
-                            Item { Layout.fillWidth: true }
                         }
                     }
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    visible: root.btEnabled && root.connectedDevice === null
-                    text: "Нет подключённых устройств"
-                    color: root.textDim
-                    font.pixelSize: 12
                 }
 
                 Rectangle {
@@ -866,7 +909,7 @@ PanelWindow {
                     visible: root.btEnabled
                 }
 
-                // DEVICES
+                //----------------DEVICES----------------
                 RowLayout {
                     Layout.fillWidth: true
                     visible: root.btEnabled
@@ -927,7 +970,7 @@ PanelWindow {
                 }
             }
 
-            // LIST
+            //----------------LIST----------------
             Flickable {
                 id: deviceList
                 Layout.fillWidth: true
@@ -966,25 +1009,6 @@ PanelWindow {
                                 anchors.leftMargin: 6
                                 anchors.rightMargin: 10
                                 spacing: 10
-
-                                Rectangle {
-                                    width: 22; height: 22; radius: 11
-                                    visible: modelData.paired
-                                    color: rowGearArea.containsMouse ? root.accentSecondary : "transparent"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "󰒓"
-                                        font.pixelSize: 11
-                                        color: root.textDim
-                                    }
-                                    MouseArea {
-                                        id: rowGearArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.openDeviceSettings(modelData)
-                                    }
-                                }
 
                                 Text {
                                     visible: root.isBusy(modelData.dbusPath) || modelData.pairing
@@ -1084,7 +1108,7 @@ PanelWindow {
             }
         }
 
-        // TOGGLE
+        //----------------TOGGLE----------------
         Rectangle {
             id: btToggleButton
             z: 20
@@ -1249,7 +1273,7 @@ PanelWindow {
             }
         }
 
-        // SETTINGS
+        //----------------SETTINGS----------------
         Rectangle {
             anchors.fill: parent
             radius: 8
@@ -1311,7 +1335,7 @@ PanelWindow {
                         }
                     }
 
-                    // RENAME
+                    //----------------RENAME----------------
                     Rectangle {
                         Layout.fillWidth: true
                         height: 38
@@ -1338,7 +1362,7 @@ PanelWindow {
                         }
                     }
 
-                    // BATTERY
+                    //----------------BATTERY----------------
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
@@ -1360,7 +1384,7 @@ PanelWindow {
                         }
                     }
 
-                    // TRUST
+                    //----------------TRUST----------------
                     Rectangle {
                         id: trustRow
                         Layout.fillWidth: true
@@ -1426,7 +1450,7 @@ PanelWindow {
                         }
                     }
 
-                    // ANC
+                    //----------------ANC----------------
                     Rectangle {
                         Layout.fillWidth: true
                         implicitHeight: ancNote.implicitHeight + 16
