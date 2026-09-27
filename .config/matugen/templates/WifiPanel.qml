@@ -9,7 +9,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
-    //------------------------------- WINDOW SETUP ----------------------
+    //----------------WINDOW----------------
     visible: false
     focusable: true
     WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
@@ -81,7 +81,7 @@ PanelWindow {
     implicitWidth: 380
     implicitHeight: 540
 
-    //------------------------------- THEME COLORS ----------------------
+    //----------------COLORS----------------
     readonly property color accentPrimary:   "{{theme.accent_primary.hex}}"
     readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
     readonly property color bgPanelWaybar:   "{{theme.bg_panel_waybar.hex}}"
@@ -100,7 +100,7 @@ PanelWindow {
     readonly property color borderColor: accentPrimary
     readonly property color separatorColor: Qt.rgba(1, 1, 1, 0.08)
 
-    //------------------------------- STATE ----------------------
+    //----------------STATE----------------
     property bool wifiEnabled: true
     readonly property bool scanning: scanProc.pending || scanProc.running
     readonly property bool busy: connectProc.pending || connectProc.running
@@ -153,7 +153,7 @@ PanelWindow {
 
     onAvailableNetworksChanged: root.syncNetworkModel()
 
-    //------------------------------- FUNCTIONS ----------------------
+    //----------------FUNCTIONS----------------
     function queueRefresh() {
         if (!eventRefreshTimer.running)
             eventRefreshTimer.start()
@@ -511,6 +511,8 @@ PanelWindow {
         list.sort(function(a, b) {
             if (a.active !== b.active)
                 return a.active ? -1 : 1
+            if (a.known !== b.known)
+                return a.known ? -1 : 1
             return b.signal - a.signal || (a.ssid < b.ssid ? -1 : a.ssid > b.ssid ? 1 : 0)
         })
         return list
@@ -556,6 +558,13 @@ PanelWindow {
                 secure: network.secure, needsPassword: network.needsPassword,
                 active: root.wifiEnabled && root.activeIface !== "" && network.ssid === root.activeSsid,
                 iface: network.iface, known: root.profileForSsid(network.ssid) !== null }
+        })
+        list.sort(function(a, b) {
+            if (a.active !== b.active)
+                return a.active ? -1 : 1
+            if (a.known !== b.known)
+                return a.known ? -1 : 1
+            return b.signal - a.signal || (a.ssid < b.ssid ? -1 : a.ssid > b.ssid ? 1 : 0)
         })
         root.setNetworks(list)
     }
@@ -619,7 +628,7 @@ PanelWindow {
         return "󰤟"
     }
 
-    //------------------------------- PROCESSES ----------------------
+    //----------------PROCESSES----------------
     component NmcliProcess: Process {
         id: job
         property bool pending: false
@@ -885,7 +894,7 @@ PanelWindow {
         stderr: StdioCollector {}
     }
 
-    //------------------------------- LIFECYCLE / TIMERS ----------------------
+    //----------------TIMERS----------------
     Component.onCompleted: {
         root.syncNetworkModel()
         monitorProc.running = root.expanded
@@ -931,7 +940,7 @@ PanelWindow {
     }
 
 
-    //------------------------------- FOCUS ----------------------
+    //----------------FOCUS----------------
     HyprlandFocusGrab {
         id: focusGrab
         windows: [root]
@@ -943,7 +952,7 @@ PanelWindow {
             root.expanded = true
     }
 
-    //------------------------------- LAYOUT ----------------------
+    //----------------LAYOUT----------------
     Rectangle {
         id: card
         anchors.fill: parent
@@ -960,7 +969,7 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: root.hide()
 
-        //------------------------------- ANIMATIONS ----------------------
+        //----------------ANIMATIONS----------------
         SequentialAnimation {
             id: openAnim
 
@@ -1018,14 +1027,14 @@ PanelWindow {
             }
         }
 
-        //------------------------------- MAIN CONTENT ----------------------
+        //----------------CONTENT----------------
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 24
             spacing: 14
             visible: root.wifiEnabled
 
-            //------------------------------- HEADER / TOP SECTION ----------------------
+            //----------------HEADER----------------
             ColumnLayout {
                 id: topSection
                 Layout.fillWidth: true
@@ -1065,7 +1074,7 @@ PanelWindow {
                     }
                 }
 
-                //------------------------------- CONNECTION INFO ----------------------
+                //----------------CONNECTION----------------
                 Rectangle {
                     id: connectionInfo
                     Layout.fillWidth: true
@@ -1254,7 +1263,7 @@ PanelWindow {
                     visible: root.wifiEnabled
                 }
 
-                //------------------------------- NETWORK LIST HEADER ----------------------
+                //----------------SCAN----------------
                 RowLayout {
                     Layout.fillWidth: true
                     visible: root.wifiEnabled
@@ -1315,7 +1324,7 @@ PanelWindow {
                 }
             }
 
-            //------------------------------- NETWORK LIST ----------------------
+            //----------------NETWORKS----------------
             Flickable {
                 id: networkList
                 Layout.fillWidth: true
@@ -1512,7 +1521,7 @@ PanelWindow {
             }
         }
 
-        //------------------------------- WIFI TOGGLE BUTTON ----------------------
+        //----------------TOGGLE----------------
         Rectangle {
             id: wifiToggleButton
             z: 20
@@ -1677,7 +1686,7 @@ PanelWindow {
             }
         }
 
-        //------------------------------- PASSWORD PROMPT ----------------------
+        //----------------PASSWORD----------------
         Rectangle {
             anchors.fill: parent
             radius: 8
