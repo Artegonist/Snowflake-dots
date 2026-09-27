@@ -126,11 +126,29 @@ PanelWindow {
     // ------------------------- PIPEWIRE NODES -------------------------
 
     PwObjectTracker {
-        objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource, ...root.streamNodes]
+        objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource, ...root.streamNodes, ...root.outputDevices, ...root.inputDevices]
     }
 
     readonly property var sinkNode: Pipewire.defaultAudioSink
     readonly property var sourceNode: Pipewire.defaultAudioSource
+
+    readonly property var outputDevices: {
+        const list = []
+        for (const node of Pipewire.nodes.values) {
+            if (!node.isStream && node.audio && node.isSink)
+                list.push(node)
+        }
+        return list
+    }
+
+    readonly property var inputDevices: {
+        const list = []
+        for (const node of Pipewire.nodes.values) {
+            if (!node.isStream && node.audio && !node.isSink)
+                list.push(node)
+        }
+        return list
+    }
 
     readonly property var sinkAudio: sinkNode ? sinkNode.audio : null
     readonly property var sourceAudio: sourceNode ? sourceNode.audio : null
@@ -202,20 +220,31 @@ PanelWindow {
             Layout.fillWidth: true
             spacing: 8
 
-            Text {
-                id: muteIcon
-                text: row.muted ? "󰝟" : row.icon
-                color: row.muted ? row.root.danger : (muteArea.containsMouse ? row.root.accentSecondary : row.root.accentPrimary)
-                font.pixelSize: 15
+            Rectangle {
+                id: muteBtn
+                width: 24
+                height: 24
+                radius: 6
+                color: row.muted ? row.root.danger
+                     : muteArea.containsMouse ? row.root.accentPrimary
+                     : Qt.rgba(1, 1, 1, 0.06)
                 scale: muteArea.pressed ? 0.85 : 1.0
 
-                Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutCubic } }
                 Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: row.muted ? "󰝟" : row.icon
+                    font.pixelSize: 13
+                    color: (row.muted || muteArea.containsMouse) ? row.root.bgPanel : row.root.textMain
+
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                }
 
                 MouseArea {
                     id: muteArea
                     anchors.fill: parent
-                    anchors.margins: -4
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
@@ -434,9 +463,9 @@ PanelWindow {
 
             Rectangle {
                 id: balThumb
-                width: 12
-                height: 12
-                radius: 6
+                width: 14
+                height: 14
+                radius: 7
                 color: balancer.root.thumbColor
                 scale: balDrag.pressed ? 1.15 : 1.0
                 y: balTrack.y + balTrack.height / 2 - height / 2
@@ -610,14 +639,234 @@ PanelWindow {
         }
     }
 
+    component DeviceSelector: Item {
+        id: selector
+
+        property var root
+        property string label: ""
+        property string icon: "󰕾"
+        property var devices: []
+        property var currentNode: null
+
+        signal deviceSelected(var node)
+
+        property bool open: false
+
+        Layout.fillWidth: true
+        implicitHeight: dsLabel.height + 4 + headerBtn.height
+        z: selector.open ? 100 : 1
+
+        Connections {
+            target: selector.root
+            function onExpandedChanged() {
+                if (!selector.root.expanded)
+                    selector.open = false
+            }
+        }
+
+        Text {
+            id: dsLabel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            text: selector.label
+            color: selector.root.textDim
+            font.pixelSize: 11
+        }
+
+        Rectangle {
+            id: headerBtn
+            anchors.top: dsLabel.bottom
+            anchors.topMargin: 4
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 32
+            topLeftRadius: 6
+            topRightRadius: 6
+            bottomLeftRadius: selector.open ? 0 : 6
+            bottomRightRadius: selector.open ? 0 : 6
+            color: selector.root.bgTrack
+            border.width: (headerArea.containsMouse && !selector.open) ? 1 : 0
+            border.color: selector.root.accentPrimary
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                spacing: 6
+
+                Text {
+                    text: selector.icon
+                    color: selector.root.accentPrimary
+                    font.pixelSize: 13
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: selector.currentNode
+                        ? (selector.currentNode.nickname || selector.currentNode.description || selector.currentNode.name)
+                        : "Устройство не выбрано"
+                    color: selector.root.textMain
+                    font.pixelSize: 12
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    text: selector.open ? "\u25B4" : "\u25BE"
+                    color: selector.root.textDim
+                    font.pixelSize: 10
+                }
+            }
+
+            MouseArea {
+                id: headerArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: selector.open = !selector.open
+            }
+        }
+
+        Rectangle {
+            id: dropdown
+            anchors.top: headerBtn.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            topLeftRadius: 0
+            topRightRadius: 0
+            bottomLeftRadius: 6
+            bottomRightRadius: 6
+            color: selector.root.bgTrack
+            clip: true
+            visible: height > 0
+            height: selector.open ? Math.min(list.contentHeight, 176) : 0
+            Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+            ListView {
+                id: list
+                anchors.fill: parent
+                model: selector.devices
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+
+                delegate: Rectangle {
+                    width: list.width
+                    height: 30
+
+                    readonly property bool isCurrent: selector.currentNode && modelData.id === selector.currentNode.id
+
+                    color: itemArea.containsMouse ? selector.root.accentSecondary
+                         : (isCurrent ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 10
+                        verticalAlignment: Text.AlignVCenter
+                        text: modelData.nickname || modelData.description || modelData.name
+                        color: parent.isCurrent ? selector.root.accentPrimary : selector.root.textMain
+                        font.pixelSize: 12
+                        font.bold: parent.isCurrent
+                        elide: Text.ElideRight
+                    }
+
+                    MouseArea {
+                        id: itemArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            selector.deviceSelected(modelData)
+                            selector.open = false
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            anchors.top: headerBtn.top
+            anchors.left: headerBtn.left
+            anchors.right: headerBtn.right
+            anchors.bottom: dropdown.bottom
+            color: "transparent"
+            radius: 6
+            border.width: selector.open ? 1 : 0
+            border.color: selector.root.accentPrimary
+            visible: selector.open
+        }
+    }
+
     // ------------------------- COMPONENT: MixerPage — выход / вход / потоки приложений -------------------------
 
     component MixerPage: Item {
         id: page
         property var root
 
-        ColumnLayout {
+        Connections {
+            target: outputSelector
+            function onOpenChanged() {
+                if (outputSelector.open) inputSelector.open = false
+            }
+        }
+
+        Connections {
+            target: inputSelector
+            function onOpenChanged() {
+                if (inputSelector.open) outputSelector.open = false
+            }
+        }
+
+        RowLayout {
+            id: deviceRow
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            spacing: 10
+            z: (outputSelector.open || inputSelector.open) ? 100 : 1
+
+            DeviceSelector {
+                id: outputSelector
+                Layout.fillWidth: true
+                root: page.root
+                label: "Устройство вывода"
+                icon: "󰕾"
+                devices: page.root.outputDevices
+                currentNode: page.root.sinkNode
+                onDeviceSelected: (node) => { Pipewire.preferredDefaultAudioSink = node }
+            }
+
+            DeviceSelector {
+                id: inputSelector
+                Layout.fillWidth: true
+                root: page.root
+                label: "Устройство ввода"
+                icon: "󰍬"
+                devices: page.root.inputDevices
+                currentNode: page.root.sourceNode
+                onDeviceSelected: (node) => { Pipewire.preferredDefaultAudioSource = node }
+            }
+        }
+
+        MouseArea {
+            id: outsideCatcher
             anchors.fill: parent
+            z: 50
+            enabled: outputSelector.open || inputSelector.open
+            onPressed: (mouse) => {
+                outputSelector.open = false
+                inputSelector.open = false
+                mouse.accepted = true
+            }
+        }
+
+        ColumnLayout {
+            anchors.top: deviceRow.bottom
+            anchors.topMargin: 14
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
             spacing: 14
 
             VolumeRow {
