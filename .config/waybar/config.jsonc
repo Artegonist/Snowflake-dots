@@ -41,7 +41,8 @@
         "format": "{icon}",
         "icon-size": 16,
         "tooltip-format": "{title}",
-        "on-click": "minimize-raise"
+        "on-click": "minimize-raise",
+        "tooltip": false
     },
     "custom/playbutton": {
         "exec": "~/.config/waybar/scripts/playbutton.sh",
