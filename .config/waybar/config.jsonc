@@ -7,7 +7,8 @@
     "modules-left": [
         "hyprland/workspaces",
         "group/player",
-        "custom/petbutton"
+        "custom/petbutton",
+        "wlr/taskbar"
     ],
     "modules-center": [
         "clock"
@@ -35,6 +36,12 @@
         "format": "  ",
         "tooltip": false,
         "on-click": "qs -c pet-habitat ipc call petModule toggle"
+    },
+    "wlr/taskbar": {
+        "format": "{icon}",
+        "icon-size": 16,
+        "tooltip-format": "{title}",
+        "on-click": "minimize-raise"
     },
     "custom/playbutton": {
         "exec": "~/.config/waybar/scripts/playbutton.sh",
@@ -109,9 +116,9 @@
     },
     "bluetooth": {
         "format": " 󰂯 ",
-        "format-disabled": " 󰂲 ",
+        "format-off": " 󰂲 ",
         "format-on": " 󰂯 ",
-        "format-connected": " 󰂱 {device_alias} ",
+        "format-connected": " 󰂱 ",
         "on-click": "qs -c bluetooth-panel ipc call bluetooth toggle",
         "interval": 1,
         "tooltip": false
