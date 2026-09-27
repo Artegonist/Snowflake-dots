@@ -131,7 +131,6 @@ window#waybar {
     opacity: 0.5;
 }
 
-/* Иконки окон активного рабочего стола */
 #taskbar button {
     background-color: transparent;
     color: @text_waybar;
