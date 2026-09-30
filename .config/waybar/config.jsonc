@@ -42,6 +42,7 @@
         "icon-size": 16,
         "tooltip-format": "{title}",
         "on-click": "minimize-raise",
+        "ignore-list" ["kitty"],
         "tooltip": false
     },
     "custom/playbutton": {
