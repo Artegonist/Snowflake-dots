@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import Quickshell.Bluetooth
+import Quickshell.Io
 
 PanelWindow {
     id: root
@@ -140,6 +141,49 @@ PanelWindow {
     property var activeSettingsDevice: null
     property string renameText: ""
 
+    readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/quickshell"
+    readonly property string stateFilePath: root.stateDir + "/bluetooth-panel.state"
+    property bool savedEnabled: true
+    property bool stateLoaded: false
+    property bool restoreApplied: false
+
+    Process {
+        running: true
+        command: ["mkdir", "-p", root.stateDir]
+        onExited: stateFile.path = root.stateFilePath
+    }
+
+    FileView {
+        id: stateFile
+        onLoaded: {
+            root.savedEnabled = text().trim() !== "off"
+            root.stateLoaded = true
+            root.applySavedState()
+        }
+        onLoadFailed: {
+            root.savedEnabled = true
+            root.stateLoaded = true
+            root.applySavedState()
+        }
+    }
+
+    function saveState(enabled) {
+        root.savedEnabled = enabled
+        if (stateFile.path !== "")
+            stateFile.setText(enabled ? "on" : "off")
+    }
+
+    function applySavedState() {
+        if (root.restoreApplied || !root.stateLoaded || !root.adapter) return
+        root.restoreApplied = true
+        if (!root.savedEnabled && root.adapter.enabled) {
+            root.adapter.enabled = false
+            root.stopScan()
+        }
+    }
+
+    onAdapterChanged: root.applySavedState()
+
     function opFor(path) {
         return root.opsVersion >= 0 ? root.deviceOps[path] : undefined
     }
@@ -187,6 +231,7 @@ PanelWindow {
         if (!root.adapter) return false
         const turnOn = enabled === true
         root.adapter.enabled = turnOn
+        root.saveState(turnOn)
         if (!turnOn) {
             root.errorText = ""
             root.stopScan()
@@ -426,7 +471,7 @@ PanelWindow {
     }
 
     function tryAutoConnect() {
-        if (!root.btEnabled) return
+        if (!root.btEnabled || !root.restoreApplied) return
         const now = Date.now()
         const wo = root.wasOursAt
         let woChanged = false
