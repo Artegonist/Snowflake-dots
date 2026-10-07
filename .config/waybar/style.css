@@ -34,7 +34,8 @@ window#waybar {
 #sysinfo:hover,
 #sysinfo #memory:hover,
 #sysinfo #cpu:hover,
-#sysinfo #temperature:hover {
+#sysinfo #temperature:hover,
+#custom-layout:hover {
     background-color: @hover_light;
     color: @workspace_active;
     border-radius: 10px;
@@ -117,6 +118,7 @@ window#waybar {
     padding: 0 14px;
     margin-left: 12px;
     box-shadow: inset 0 0 0 2px @hover_light;
+    transition: all 0.2s ease;
 }
 
 #custom-playbutton.playing {
@@ -137,7 +139,7 @@ window#waybar {
     border: none;
     border-radius: 10px;
     padding: 0 8px;
-    margin: 0px;
+    margin: 0;
     transition: all 0.2s ease;
 }
 
@@ -149,4 +151,11 @@ window#waybar {
 #taskbar button:hover {
     background-color: @hover_light;
     color: @workspace_active;
+}
+
+#custom-layout {
+    padding: 0 8px;
+    border-radius: 10px;
+    color: @text_waybar;
+    transition: all 0.2s ease;
 }
