@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# battery-watch.sh — event-driven battery module for waybar
-
-## Require: upower, jq, coreutils (stdbuf)
-
 set -uo pipefail
 
-
-# ---------- SETTINGS ----------
+for command in upower jq stdbuf; do
+    if ! command -v "$command" >/dev/null 2>&1; then
+        printf '{"text":"","tooltip":"Не найдена зависимость: %s","class":"error"}\n' "$command"
+        exit 0
+    fi
+done
 
 ICONS_DEFAULT=("󰂎" "󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹")
 ICON_CHARGING="󰂄"
@@ -17,8 +17,6 @@ ICON_CRITICAL="󱉝"
 
 WARNING_THRESHOLD=30
 CRITICAL_THRESHOLD=5
-
-# ---------- SEARCH FOR BATTERY DEVICE ----------
 
 find_battery_device() {
     upower -e 2>/dev/null | grep -m1 'BAT' || true
@@ -30,8 +28,6 @@ if [[ -z "${BATTERY_DEV}" ]]; then
     echo '{"text":"","tooltip":"Нет батареи","class":"no-battery"}'
     exit 0
 fi
-
-# ---------- FORMATTING OUTPUT ----------
 
 pick_icon() {
     local percent="$1"
@@ -112,10 +108,7 @@ emit_state() {
         '{text: $text, tooltip: $tooltip, class: $class, percentage: $percentage}' 2>/dev/null || true
 }
 
-# ---------- INITIAL STATE ----------
 emit_state
-
-# ---------- MAIN LOOP: LISTENING TO DBUS EVENTS UPOWERD ----------
 
 while true; do
     stdbuf -oL upower --monitor-detail 2>/dev/null | while read -r line; do
