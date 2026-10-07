@@ -103,7 +103,6 @@
         "tooltip": false
     },
     "network": {
-        "interface": "wlp0s20f3",
         "format": "{icon}",
         "on-click": "qs -c wifi-panel ipc call wifi toggle",
         "format-wifi": "{icon} {essid}",
