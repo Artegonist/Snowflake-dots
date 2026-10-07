@@ -1,11 +1,11 @@
- {
+{
     "layer": "top",
     "position": "top",
-    "width": 1920,
     "height": 27,
     "spacing": 6,
     "modules-left": [
         "hyprland/workspaces",
+        "custom/layout",
         "group/player",
         "custom/petbutton",
         "wlr/taskbar"
@@ -37,31 +37,47 @@
         "tooltip": false,
         "on-click": "qs -c pet-habitat ipc call petModule toggle"
     },
+    "custom/layout": {
+        "exec": "~/.config/hypr/scripts/toggle_layout.sh show",
+        "format": "{}",
+        "interval": 10,
+        "max-length": 9,
+        "min-length": 9,
+        "signal": 9,
+        "on-click": "~/.config/hypr/scripts/toggle_layout.sh next",
+        "exec-on-event": false,
+        "tooltip": false
+    },
     "wlr/taskbar": {
         "format": "{icon}",
         "icon-size": 16,
         "tooltip-format": "{title}",
         "on-click": "minimize-raise",
+        "on-click-right": "~/.config/waybar/scripts/window-menu.sh",
         "ignore-list": ["kitty"],
+        "squash-list": ["*"],
+        "active-first": true,
         "tooltip": false
     },
     "custom/playbutton": {
         "exec": "~/.config/waybar/scripts/playbutton.sh",
         "return-type": "json",
         "on-click": "~/.config/waybar/scripts/playbutton.sh toggle",
-        "restart-interval": 5,
+        "on-click-right": "qs -c player-module ipc call player toggle",
         "signal": 8,
-        "interval": 1,
+        "interval": 0.1,
         "tooltip": false
     },
     "custom/prevbutton": {
         "format": "󰒮",
-        "on-click": "playerctl previous",
+        "on-click": "~/.config/waybar/scripts/playbutton.sh previous",
+        "on-click-right": "qs -c player-module ipc call player toggle",
         "tooltip": false
     },
     "custom/nextbutton": {
         "format": "󰒭",
-        "on-click": "playerctl next",
+        "on-click": "~/.config/waybar/scripts/playbutton.sh next",
+        "on-click-right": "qs -c player-module ipc call player toggle",
         "tooltip": false
     },
     
@@ -124,11 +140,6 @@
         "interval": 1,
         "tooltip": false
     },
-    "cava": {
-        "cava_config": "/home/artegonist/.config/cava/waybar_cava.conf",
-        "input_delay": 2,
-        "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
-    }, 
     "backlight": {
         "tooltip": false,
         "reverse-scrolling": true,
@@ -174,7 +185,8 @@
     "temperature": {
         "interval": 5,
         "tooltip": false,
-        "on-click": "qs -c system-info ipc call sysinfo toggle",   
+        "on-click": "qs -c system-info ipc call sysinfo toggle",
+        "hwmon-path": "/sys/class/hwmon/hwmon5/temp1_input",       
         "format": "{icon} {temperatureC}°",
         "format-icons": ["","","",""]
     },
