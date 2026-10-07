@@ -174,8 +174,7 @@
     "temperature": {
         "interval": 5,
         "tooltip": false,
-        "on-click": "qs -c system-info ipc call sysinfo toggle",
-        "hwmon-path": "/sys/class/hwmon/hwmon5/temp1_input",       
+        "on-click": "qs -c system-info ipc call sysinfo toggle",   
         "format": "{icon} {temperatureC}°",
         "format-icons": ["","","",""]
     },
