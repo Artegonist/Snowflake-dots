@@ -1,4 +1,3 @@
-
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -95,24 +94,53 @@ PanelWindow {
     readonly property bool scanning: root.adapter ? root.adapter.discovering : false
     readonly property var allDevices: root.adapter ? root.adapter.devices.values : []
 
-    readonly property var connectedDevicesList: {
-        const arr = root.allDevices.filter(function(d) { return d.connected })
-        arr.sort(function(a, b) { return (a.name || "").localeCompare(b.name || "") })
-        return arr
-    }
+    property var connectedDevicesList: []
+    property var listDevices: []
     readonly property int connectedCount: root.connectedDevicesList.length
     readonly property var connectedDevice: root.connectedCount > 0 ? root.connectedDevicesList[0] : null
 
-    readonly property var listDevices: {
-        const list = root.allDevices.filter(function(d) {
-            return !d.connected
-        })
-        list.sort(function(a, b) {
+    function sameList(a, b) {
+        if (a.length !== b.length) return false
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return false
+        }
+        return true
+    }
+
+    function rebuildLists() {
+        const all = root.btEnabled ? root.allDevices : []
+        const conn = []
+        const rest = []
+        for (const d of all) {
+            if (d.connected) conn.push(d)
+            else rest.push(d)
+        }
+        conn.sort(function(a, b) { return (a.name || "").localeCompare(b.name || "") })
+        rest.sort(function(a, b) {
             if (a.paired !== b.paired) return a.paired ? -1 : 1
             return (a.name || "").localeCompare(b.name || "")
         })
-        return list
+
+        if (!root.sameList(conn, root.connectedDevicesList))
+            root.connectedDevicesList = conn
+        if (!root.sameList(rest, root.listDevices))
+            root.listDevices = rest
     }
+
+    function scheduleRebuild() {
+        rebuildTimer.restart()
+    }
+
+    Timer {
+        id: rebuildTimer
+        interval: 80
+        repeat: false
+        onTriggered: root.rebuildLists()
+    }
+
+    onAllDevicesChanged: root.scheduleRebuild()
+    onBtEnabledChanged: root.scheduleRebuild()
+    Component.onCompleted: root.rebuildLists()
 
     //----------------OPS----------------
     property var deviceOps: ({})
@@ -178,8 +206,8 @@ PanelWindow {
         if (root.restoreApplied || !root.stateLoaded || !root.adapter) return
         root.restoreApplied = true
         if (!root.savedEnabled && root.adapter.enabled) {
-            root.adapter.enabled = false
             root.stopScan()
+            root.adapter.enabled = false
         }
     }
 
@@ -192,7 +220,7 @@ PanelWindow {
         return !!root.opFor(path)
     }
     function startOp(device, action, auto) {
-        const ops = root.deviceOps
+        const ops = Object.assign({}, root.deviceOps)
         ops[device.dbusPath] = { action: action, name: device.name, bounce: false, auto: !!auto }
         root.deviceOps = ops
         root.opsVersion++
@@ -200,10 +228,10 @@ PanelWindow {
     function endOp(path, message) {
         const op = root.opFor(path)
         if (!op) {
-            if (message !== undefined) root.errorText = message
+            if (message !== undefined && root.btEnabled) root.errorText = message
             return
         }
-        const ops = root.deviceOps
+        const ops = Object.assign({}, root.deviceOps)
         delete ops[path]
         root.deviceOps = ops
         root.opsVersion++
@@ -211,12 +239,14 @@ PanelWindow {
             root.errorText = message
     }
     function setBounce(path, val) {
-        const ops = root.deviceOps
-        if (ops[path]) {
-            ops[path].bounce = val
-            root.deviceOps = ops
-            root.opsVersion++
-        }
+        const op = root.deviceOps[path]
+        if (op) op.bounce = val
+    }
+    // Сбрасывает все незавершённые операции разом (одно обновление вместо каскада endOp).
+    function clearOps() {
+        if (Object.keys(root.deviceOps).length === 0) return
+        root.deviceOps = ({})
+        root.opsVersion++
     }
 
     //----------------FUNCTIONS----------------
@@ -231,27 +261,34 @@ PanelWindow {
     function setAdapterEnabled(enabled) {
         if (!root.adapter) return false
         const turnOn = enabled === true
+        if (!turnOn) {
+
+            root.stopScan()
+            root.errorText = ""
+            root.clearOps()
+        }
         root.adapter.enabled = turnOn
         root.saveState(turnOn)
-        if (!turnOn) {
-            root.errorText = ""
-            root.stopScan()
-        }
         return true
     }
 
     function scanDevices() {
-        if (!root.adapter || !root.btEnabled) return
+        if (!root.adapter || !root.btEnabled || root.adapter.discovering) return
         root.adapter.discovering = true
     }
 
     function stopScan() {
-        if (root.adapter) root.adapter.discovering = false
+        if (root.adapter && root.adapter.discovering) root.adapter.discovering = false
     }
+
+    property var iconPathCache: ({})
 
     function safeIconPath(name) {
         if (!name || name.length === 0) return ""
-        return Quickshell.iconPath(name, true)
+        const cache = root.iconPathCache
+        if (!(name in cache))
+            cache[name] = Quickshell.iconPath(name, true) || ""
+        return cache[name]
     }
 
     function fallbackGlyph(iconName) {
@@ -280,7 +317,7 @@ PanelWindow {
     }
 
     function connectDevice(device, auto) {
-        if (!device || root.isBusy(device.dbusPath)) return
+        if (!device || !root.btEnabled || root.isBusy(device.dbusPath)) return
         if (device.connected) return
         if (!auto) root.errorText = ""
         root.startOp(device, "connect", !!auto)
@@ -292,7 +329,7 @@ PanelWindow {
     }
 
     function disconnectDevice(device) {
-        if (!device || root.isBusy(device.dbusPath)) return
+        if (!device || !root.btEnabled || root.isBusy(device.dbusPath)) return
         root.errorText = ""
         root.startOp(device, "disconnect")
         const wo = root.wasOursAt
@@ -304,8 +341,17 @@ PanelWindow {
         device.connected = false
     }
 
+    function forgetListedDevice(device) {
+        if (!device || device.connected || device.pairing || !root.btEnabled) return
+        if (!(device.paired || device.bonded)) return
+        if (root.isBusy(device.dbusPath)) return
+        root.forgetDevice(device)
+    }
+
     function forgetDevice(device) {
         if (!device) return
+        if (root.activeSettingsDevice === device)
+            root.closeDeviceSettings()
         root.endOp(device.dbusPath)
         const attempts = root.autoConnectAttempts
         delete attempts[device.dbusPath]
@@ -314,7 +360,6 @@ PanelWindow {
         delete wo[device.dbusPath]
         root.wasOursAt = wo
         device.forget()
-        root.closeDeviceSettings()
     }
 
     function toggleTrust(device) {
@@ -335,8 +380,10 @@ PanelWindow {
     }
 
     function applyRename() {
-        if (root.activeSettingsDevice && root.renameText.length > 0)
-            root.activeSettingsDevice.name = root.renameText
+        const dev = root.activeSettingsDevice
+        const newName = root.renameText.trim()
+        if (dev && newName.length > 0 && newName !== dev.name)
+            dev.name = newName
     }
 
     function batteryText(device) {
@@ -361,7 +408,7 @@ PanelWindow {
 
     //----------------REACTIVE----------------
     Repeater {
-        model: root.allDevices
+        model: root.adapter ? root.adapter.devices : null
         delegate: Item {
             id: opItem
             required property var modelData
@@ -372,12 +419,23 @@ PanelWindow {
                 else watchdog.stop()
             }
 
+            Component.onCompleted: {
+                if (op) watchdog.restart()
+            }
+
+            Connections {
+                target: modelData
+                function onConnectedChanged() { root.scheduleRebuild() }
+                function onPairedChanged() { root.scheduleRebuild() }
+                function onNameChanged() { root.scheduleRebuild() }
+            }
+
             Timer {
                 id: watchdog
                 interval: 15000
                 repeat: false
                 onTriggered: {
-                    if (!opItem.op) return
+                    if (!opItem.op || !root.btEnabled) return
                     const name = opItem.op.name || "устройство"
                     const action = opItem.op.action
                     if (modelData.pairing)
@@ -394,7 +452,8 @@ PanelWindow {
                 repeat: false
                 onTriggered: {
                     root.setBounce(modelData.dbusPath, false)
-                    modelData.connected = true
+                    if (root.btEnabled && opItem.op)
+                        modelData.connected = true
                 }
             }
 
@@ -452,15 +511,6 @@ PanelWindow {
         running: root.expanded && root.btEnabled
         repeat: true
         onTriggered: root.scanDevices()
-    }
-
-    Timer {
-        interval: 20000
-        running: root.expanded && root.btEnabled
-        repeat: true
-        onTriggered: {
-            if (!root.scanning) root.scanDevices()
-        }
     }
 
     Timer {
@@ -526,7 +576,12 @@ PanelWindow {
         scale: 0.85
 
         focus: true
-        Keys.onEscapePressed: root.hide()
+        Keys.onEscapePressed: {
+            if (root.deviceSettingsVisible)
+                root.closeDeviceSettings()
+            else
+                root.hide()
+        }
 
         //----------------ANIMATIONS----------------
         SequentialAnimation {
@@ -581,7 +636,11 @@ PanelWindow {
                 NumberAnimation { target: card; property: "scale"; to: 0.85; duration: 110; easing.type: Easing.InCubic }
             }
             ScriptAction {
-                script: root.closing = false
+                script: {
+                    root.closing = false
+                    if (!root.expanded)
+                        root.visible = false
+                }
             }
         }
 
@@ -720,7 +779,7 @@ PanelWindow {
 
                     SequentialAnimation {
                         id: disconnectPulse
-                        running: connectionInfo.disconnecting
+                        running: connectionInfo.disconnecting && root.btEnabled
                         loops: Animation.Infinite
                         NumberAnimation {
                             target: connectionInfo
@@ -1051,6 +1110,7 @@ PanelWindow {
                             Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                             RowLayout {
+                                z: 1
                                 anchors.fill: parent
                                 anchors.leftMargin: 6
                                 anchors.rightMargin: 10
@@ -1061,6 +1121,48 @@ PanelWindow {
                                     text: "…"
                                     font.pixelSize: 14
                                     color: root.accentPrimary
+                                }
+
+                                Rectangle {
+                                    id: forgetDeviceButton
+                                    visible: (modelData.paired || modelData.bonded) && !modelData.pairing
+                                    enabled: root.btEnabled && !root.isBusy(modelData.dbusPath)
+                                    implicitWidth: forgetDeviceLabel.implicitWidth + 14
+                                    height: 24
+                                    radius: 8
+                                    color: forgetDeviceArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
+                                           : forgetDeviceArea.containsMouse ? root.accentSecondary : root.accentPrimary
+                                    opacity: enabled ? 1 : 0.55
+                                    scale: forgetDeviceArea.pressed ? 0.95 : 1
+
+                                    Behavior on color { ColorAnimation { duration: 120 } }
+                                    Behavior on opacity { NumberAnimation { duration: 120 } }
+                                    Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+
+                                    Text {
+                                        id: forgetDeviceLabel
+                                        anchors.centerIn: parent
+                                        text: "Забыть"
+                                        color: root.bgPanel
+                                        font.pixelSize: 11
+                                    }
+
+                                    MouseArea {
+                                        id: forgetDeviceArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        property var pressedDevice: null
+
+                                        onPressed: pressedDevice = modelData
+                                        onCanceled: pressedDevice = null
+                                        onClicked: {
+                                            const dev = pressedDevice
+                                            pressedDevice = null
+                                            if (dev && dev === modelData)
+                                                root.forgetListedDevice(dev)
+                                        }
+                                    }
                                 }
 
                                 ColumnLayout {
@@ -1136,7 +1238,21 @@ PanelWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: root.connectDevice(modelData)
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                property var pressedDevice: null
+
+                                onPressed: pressedDevice = modelData
+                                onCanceled: pressedDevice = null
+                                onClicked: function(mouse) {
+                                    const dev = pressedDevice
+                                    pressedDevice = null
+                                    if (!dev || dev !== modelData)
+                                        return
+                                    if (mouse.button === Qt.RightButton)
+                                        root.forgetListedDevice(dev)
+                                    else if (mouse.button === Qt.LeftButton)
+                                        root.connectDevice(dev)
+                                }
                             }
                         }
                     }
