@@ -25,7 +25,7 @@
     ],
     "group/player": {
         "orientation": "horizontal",
-        "spacing": 10,
+        "spacing": 0,
         "modules": [
             "custom/prevbutton",
             "custom/playbutton",
@@ -33,7 +33,7 @@
         ]
     },
     "custom/petbutton": {
-        "format": "  ",
+        "format": "",
         "tooltip": false,
         "on-click": "qs -c pet-habitat ipc call petModule toggle"
     },
@@ -52,11 +52,12 @@
         "format": "{icon}",
         "icon-size": 16,
         "tooltip-format": "{title}",
-        "on-click": "minimize-raise",
+        "on-click":"activate",
         "on-click-right": "~/.config/waybar/scripts/window-menu.sh",
         "ignore-list": ["kitty"],
         "squash-list": ["*"],
-        "active-first": true,
+        "interval": 1,
+        "sort-by-app-id": true,
         "tooltip": false
     },
     "custom/playbutton": {
@@ -114,7 +115,7 @@
         "tooltip": false
     },
     "custom/power": {
-        "format":  " ",
+        "format":  "",
         "on-click": "qs -c power-menu ipc call powermenu toggle",
         "tooltip": false
     },
