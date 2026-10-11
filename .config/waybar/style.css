@@ -115,7 +115,7 @@ window#waybar {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 18px;
     border-radius: 10px;
-    padding: 0 14px;
+    padding: 0 9px;
     margin-left: 12px;
     box-shadow: inset 0 0 0 2px @hover_light;
     transition: all 0.2s ease;
@@ -158,4 +158,45 @@ window#waybar {
     border-radius: 10px;
     color: @text_waybar;
     transition: all 0.2s ease;
+}
+#custom-prevbutton,
+#custom-playbutton,
+#custom-nextbutton {
+    padding: 0 3px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+#custom-prevbutton:hover,
+#custom-playbutton:hover,
+#custom-nextbutton:hover {
+    background-color: @hover_light;
+    color: @workspace_active;
+}
+
+#custom-playbutton.stopped:hover {
+    opacity: 1;
+}
+#custom-petbutton {
+    padding: 0 14px 0 9px;
+    margin: 2px 0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+#custom-petbutton:hover {
+    background-color: @hover_light;
+    color: @workspace_active;
+}
+
+#custom-power {
+    padding: 0 12px 0 8px; 
+    margin: 2px 0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+#custom-power:hover {
+    background-color: @hover_light;
+    color: @workspace_active;
 }
