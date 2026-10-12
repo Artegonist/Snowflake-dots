@@ -28,7 +28,22 @@ if ! current_layout=$(
 fi
 
 if [[ "$action" == "show" ]]; then
-    printf '%s\n' "${current_layout^}"
+    case "$current_layout" in
+        dwindle)
+            preserve=$(
+                hyprctl -j getoption dwindle:preserve_split | jq -er '.int'
+            ) || preserve=0
+            if [[ "$preserve" == "1" ]]; then
+                icon=$'\xef\x80\xa3'   
+            else
+                icon=$'\xef\x82\x9c'   
+            fi
+            printf '%s %s\n' "$icon" "${current_layout^}"
+            ;;
+        *)
+            printf '%s\n' "${current_layout^}"
+            ;;
+    esac
     exit 0
 fi
 
