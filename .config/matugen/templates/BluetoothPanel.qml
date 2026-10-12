@@ -16,11 +16,15 @@ PanelWindow {
 
     property bool expanded: false
     property bool closing: false
+    property int savedWorkspaceId: -1
 
     function show() {
         root.closing = false
         if (!root.visible)
             root.visible = true
+        root.savedWorkspaceId = Hyprland.focusedMonitor
+            ? Hyprland.focusedMonitor.activeWorkspace.id
+            : -1
         focusGrab.active = true
         root.mask = null
         root.expanded = true
@@ -29,6 +33,10 @@ PanelWindow {
     }
 
     function hide() {
+        closeInternal(true)
+    }
+
+    function closeInternal(restoreWorkspace) {
         if (!root.expanded || root.closing)
             return
         root.closing = true
@@ -36,6 +44,17 @@ PanelWindow {
         root.mask = emptyRegion
         root.expanded = false
         root.closeDeviceSettings()
+        if (restoreWorkspace)
+            returnToWorkspaceTimer.start()
+    }
+
+    Timer {
+        id: returnToWorkspaceTimer
+        interval: 30
+        onTriggered: {
+            if (root.savedWorkspaceId !== -1)
+                Hyprland.dispatch("workspace " + root.savedWorkspaceId)
+        }
     }
 
     function toggle() {
@@ -553,7 +572,7 @@ PanelWindow {
     HyprlandFocusGrab {
         id: focusGrab
         windows: [root]
-        onCleared: root.hide()
+        onCleared: root.closeInternal(false)
     }
 
     onVisibleChanged: {
@@ -636,11 +655,7 @@ PanelWindow {
                 NumberAnimation { target: card; property: "scale"; to: 0.85; duration: 110; easing.type: Easing.InCubic }
             }
             ScriptAction {
-                script: {
-                    root.closing = false
-                    if (!root.expanded)
-                        root.visible = false
-                }
+                script: root.closing = false
             }
         }
 
