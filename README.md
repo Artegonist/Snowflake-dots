@@ -1,5 +1,4 @@
-Solarpunk-hyprland-rice
-
+SNOWFLAKE-DOTS
 
 
 
