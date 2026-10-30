@@ -2,9 +2,9 @@
 
 > [!CAUTION]
 > **DISCLAIMER:**
-> **- This rice is made and tested only on Debian 13 (Trixie). I cannot guarantee flawless work on other distros.**
-> **- The WM config uses the old Hyprland syntax and does not support the new Lua syntax yet. See [What's Next](#whats-next) for upcoming changes.**
-> **- NOT ALL WALLPAPERS ARE MINE. ALL WALLPAPERS WERE EITHER FOUND ON FREE STOCK SITES OR GIVEN TO ME BY PEOPLE I KNOW. I DO NOT CLAIM ANY RIGHTS TO THEM and they are not covered by this repository's license. IF YOU ARE THE AUTHOR AND WANT YOUR WALLPAPER DELETED -CONTACT ME.**
+> **- THIS RICE IS MADE AND TESTED ONLY ON DEBIAN 13 (TRIXIE). I CANNOT GUARANTEE FLAWLESS WORK ON OTHER DISTROS.**
+> **- THE WM CONFIG USES THE OLD HYPRLAND SYNTAX AND DOES NOT SUPPORT THE NEW LUA SYNTAX YET. SEE [WHAT'S NEXT](#whats-next) FOR UPCOMING CHANGES.**
+> **- NOT ALL WALLPAPERS ARE MINE. ALL WALLPAPERS WERE EITHER FOUND ON FREE STOCK SITES OR GIVEN TO ME BY PEOPLE I KNOW. I DO NOT CLAIM ANY RIGHTS TO THEM AND THEY ARE NOT COVERED BY THIS REPOSITORY'S LICENSE. IF YOU ARE THE AUTHOR AND WANT YOUR WALLPAPER DELETED, PLEASE OPEN AN ISSUE OR CONTACT ME AT [YOUR CONTACT].**
 
 > [!NOTE]
 > This project was configured and tuned by me. AI was used for routine tasks and bug hunting. The configuration and testing were mostly done by me, including real-life daily use on Debian 13 (Trixie).
