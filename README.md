@@ -7,5 +7,6 @@
 
 > [!NOTE]
 > This project was configured and tuned by me. AI was used for routine tasks and bug hunting. The configuration and testing were mostly done by me, including real-life daily use on Debian 13 (Trixie).
->
-> 
+
+## About
+Snowflake is the Linux-rice that i personally use daily. Snowflake was made for simple-enough but visually-appearing design expirience  
