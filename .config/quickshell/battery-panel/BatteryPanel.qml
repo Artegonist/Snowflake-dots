@@ -132,7 +132,7 @@ PanelWindow {
     readonly property var profiles: [
         { label: "Экономия", profile: PowerProfile.PowerSaver },
         { label: "Баланс", profile: PowerProfile.Balanced },
-        { label: "Моooooщ", profile: PowerProfile.Performance }
+        { label: "Мощность", profile: PowerProfile.Performance }
     ]
 
     HyprlandFocusGrab {
