@@ -1,8 +1,9 @@
 @import "colors.css";
 
 * {
-    font-family: JetBrainsMono Nerd Font;
+    font-family: "JetBrainsMono Nerd Font";
     font-size: 18px;
+    min-height: 0;
 }
 
 window#waybar {
@@ -23,6 +24,7 @@ window#waybar {
     color: @bg_panel_waybar;
 }
 
+
 #workspaces button:hover,
 #cava:hover,
 #backlight:hover,
@@ -41,6 +43,8 @@ window#waybar {
     border-radius: 10px;
     transition: all 0.2s ease;
 }
+
+/* ---------- Clock ---------- */
 
 #clock,
 #network,
@@ -67,58 +71,52 @@ window#waybar {
     text-shadow: none;
 }
 
-#workspaces button,
-#cava,
-#clock,
-#backlight,
-#pulseaudio,
-#network,
-#bluetooth,
-#custom-battery {
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 18px;
-}
-
 #sysinfo {
-    border: 2px solid @hover_light;
+    box-shadow: inset 0 0 0 2px @hover_light;
     border-radius: 10px;
     padding: 0 3px;
-}
-
-#cava {
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 18px;
-    padding: 0 6px;
-    color: @text_waybar;
+    font-size: 15px;
 }
 
 #sysinfo #memory,
 #sysinfo #cpu,
 #sysinfo #temperature {
     padding: 0 6px;
-}
-
-#temperature,
-#memory,
-#cpu {
-    font-family: "JetBrainsMono Nerd Font";
     font-size: 15px;
 }
 
+#cava {
+    padding: 0 6px;
+    color: @text_waybar;
+}
+
 #language {
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 18px;
     padding: 0 8px;
 }
 
 #player {
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 18px;
+    font-size: 15px;
     border-radius: 10px;
     padding: 0 9px;
     margin-left: 12px;
     box-shadow: inset 0 0 0 2px @hover_light;
     transition: all 0.2s ease;
+}
+
+#custom-prevbutton,
+#custom-playbutton,
+#custom-nextbutton {
+    font-size: 15px;
+    padding: 0 3px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+#custom-prevbutton:hover,
+#custom-playbutton:hover,
+#custom-nextbutton:hover {
+    background-color: @hover_light;
+    color: @workspace_active;
 }
 
 #custom-playbutton.playing {
@@ -132,6 +130,11 @@ window#waybar {
 #custom-playbutton.stopped {
     opacity: 0.5;
 }
+
+#custom-playbutton.stopped:hover {
+    opacity: 1;
+}
+
 
 #taskbar button {
     background-color: transparent;
@@ -159,27 +162,10 @@ window#waybar {
     color: @text_waybar;
     transition: all 0.2s ease;
 }
-#custom-prevbutton,
-#custom-playbutton,
-#custom-nextbutton {
-    padding: 0 3px;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-}
 
-#custom-prevbutton:hover,
-#custom-playbutton:hover,
-#custom-nextbutton:hover {
-    background-color: @hover_light;
-    color: @workspace_active;
-}
-
-#custom-playbutton.stopped:hover {
-    opacity: 1;
-}
 #custom-petbutton {
     padding: 0 14px 0 9px;
-    margin: 2px 0;
+    margin: 0;
     border-radius: 10px;
     transition: all 0.2s ease;
 }
@@ -190,8 +176,8 @@ window#waybar {
 }
 
 #custom-power {
-    padding: 0 8px 0 4px; 
-    margin: 2px 0;
+    padding: 0 8px 0 4px;
+    margin: 0;
     border-radius: 10px;
     transition: all 0.2s ease;
 }
