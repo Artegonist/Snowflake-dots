@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQml.Models
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
@@ -114,9 +115,12 @@ PanelWindow {
     readonly property var allDevices: root.adapter ? root.adapter.devices.values : []
 
     property var connectedDevicesList: []
-    property var listDevices: []
     readonly property int connectedCount: root.connectedDevicesList.length
     readonly property var connectedDevice: root.connectedCount > 0 ? root.connectedDevicesList[0] : null
+
+    ListModel { id: connectedDeviceModel }
+    ListModel { id: savedDeviceModel }
+    ListModel { id: newDeviceModel }
 
     function sameList(a, b) {
         if (a.length !== b.length) return false
@@ -129,25 +133,46 @@ PanelWindow {
     function rebuildLists() {
         const all = root.btEnabled ? root.allDevices : []
         const conn = []
-        const rest = []
+        const saved = []
+        const fresh = []
         for (const d of all) {
             if (d.connected) conn.push(d)
-            else rest.push(d)
+            else if (d.paired || d.bonded) saved.push(d)
+            else fresh.push(d)
         }
-        conn.sort(function(a, b) { return (a.name || "").localeCompare(b.name || "") })
-        rest.sort(function(a, b) {
-            if (a.paired !== b.paired) return a.paired ? -1 : 1
-            return (a.name || "").localeCompare(b.name || "")
-        })
+        const byName = function(a, b) { return (a.name || "").localeCompare(b.name || "") }
+        conn.sort(byName)
+        saved.sort(byName)
+        fresh.sort(byName)
 
         if (!root.sameList(conn, root.connectedDevicesList))
             root.connectedDevicesList = conn
-        if (!root.sameList(rest, root.listDevices))
-            root.listDevices = rest
+        root.syncDeviceModel(connectedDeviceModel, conn)
+        root.syncDeviceModel(savedDeviceModel, saved)
+        root.syncDeviceModel(newDeviceModel, fresh)
+    }
+
+    function syncDeviceModel(model, list) {
+        for (let i = 0; i < list.length; i++) {
+            let existing = -1
+            for (let j = i; j < model.count; j++) {
+                if (model.get(j).device === list[i]) {
+                    existing = j
+                    break
+                }
+            }
+            if (existing === -1)
+                model.insert(i, { device: list[i] })
+            else if (existing !== i)
+                model.move(existing, i, 1)
+        }
+        if (model.count > list.length)
+            model.remove(list.length, model.count - list.length)
     }
 
     function scheduleRebuild() {
-        rebuildTimer.restart()
+        if (!rebuildTimer.running)
+            rebuildTimer.start()
     }
 
     Timer {
@@ -447,6 +472,7 @@ PanelWindow {
                 function onConnectedChanged() { root.scheduleRebuild() }
                 function onPairedChanged() { root.scheduleRebuild() }
                 function onNameChanged() { root.scheduleRebuild() }
+                function onBondedChanged() { root.scheduleRebuild() }
             }
 
             Timer {
@@ -741,6 +767,11 @@ PanelWindow {
                     scale: changeScale
                     transformOrigin: Item.Center
 
+                    Behavior on implicitHeight {
+                        enabled: card.opacity === 1
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+
                     readonly property bool disconnecting: {
                         for (const d of root.connectedDevicesList) {
                             const op = root.opFor(d.dbusPath)
@@ -827,7 +858,9 @@ PanelWindow {
 
                     ColumnLayout {
                         id: connectionColumn
-                        anchors.fill: parent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.margins: 10
                         spacing: 10
 
@@ -852,12 +885,11 @@ PanelWindow {
                         }
 
                         Repeater {
-                            model: root.connectedDevicesList
+                            model: connectedDeviceModel
 
                             delegate: ColumnLayout {
                                 id: connectedBlock
-                                required property var modelData
-                                required property int index
+                                required property var device
                                 Layout.fillWidth: true
                                 spacing: 8
                                 scale: 1
@@ -898,27 +930,27 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.openDeviceSettings(connectedBlock.modelData)
+                                            onClicked: root.openDeviceSettings(connectedBlock.device)
                                         }
                                     }
 
                                     RowLayout {
                                         spacing: 4
-                                        visible: connectedBlock.modelData.batteryAvailable
+                                        visible: connectedBlock.device.batteryAvailable
                                         Text {
-                                            text: root.batteryText(connectedBlock.modelData)
+                                            text: root.batteryText(connectedBlock.device)
                                             color: root.textDim
                                             font.pixelSize: 12
                                         }
                                         Text {
-                                            text: root.batteryIcon(Math.round(connectedBlock.modelData.battery * 100))
+                                            text: root.batteryIcon(Math.round(connectedBlock.device.battery * 100))
                                             font.pixelSize: 13
                                             color: root.accentPrimary
                                         }
                                     }
 
                                     Text {
-                                        text: connectedBlock.modelData.name
+                                        text: connectedBlock.device.name
                                         color: root.textMain
                                         font.pixelSize: 13
                                         elide: Text.ElideRight
@@ -930,7 +962,7 @@ PanelWindow {
                                         width: 16; height: 16
 
                                         readonly property string iconPath:
-                                            root.safeIconPath(connectedBlock.modelData.icon)
+                                            root.safeIconPath(connectedBlock.device.icon)
 
                                         Image {
                                             anchors.fill: parent
@@ -940,7 +972,7 @@ PanelWindow {
                                         Text {
                                             anchors.centerIn: parent
                                             visible: parent.iconPath === ""
-                                            text: root.fallbackGlyph(connectedBlock.modelData.icon)
+                                            text: root.fallbackGlyph(connectedBlock.device.icon)
                                             font.pixelSize: 12
                                             color: root.textDim
                                         }
@@ -975,7 +1007,7 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.disconnectDevice(connectedBlock.modelData)
+                                            onClicked: root.disconnectDevice(connectedBlock.device)
                                         }
                                     }
 
@@ -1003,7 +1035,7 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.forgetDevice(connectedBlock.modelData)
+                                            onClicked: root.forgetDevice(connectedBlock.device)
                                         }
                                     }
 
@@ -1015,7 +1047,7 @@ PanelWindow {
                                     Layout.topMargin: 2
                                     height: 1
                                     color: root.separatorColor
-                                    visible: connectedBlock.index < root.connectedCount - 1
+                                    visible: connectedBlock.device !== root.connectedDevicesList[root.connectedCount - 1]
                                 }
                             }
                         }
@@ -1056,6 +1088,7 @@ PanelWindow {
                             RotationAnimation on rotation {
                                 running: root.scanning
                                 loops: Animation.Infinite
+                                alwaysRunToEnd: true
                                 from: 0
                                 to: 360
                                 duration: 900
@@ -1098,8 +1131,20 @@ PanelWindow {
                 clip: true
                 visible: root.btEnabled
                 contentHeight: deviceColumn.height
+                flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
                 opacity: 0
+
+                function clampContent() {
+                    if (deviceList.moving)
+                        return
+                    const maxY = Math.max(0, deviceList.contentHeight - deviceList.height)
+                    if (deviceList.contentY > maxY)
+                        deviceList.contentY = maxY
+                }
+
+                onContentHeightChanged: deviceList.clampContent()
+                onHeightChanged: deviceList.clampContent()
 
                 transform: Translate {
                     id: deviceListTranslate
@@ -1111,14 +1156,16 @@ PanelWindow {
                     width: parent.width
                     spacing: 6
 
-                    Repeater {
-                        model: root.listDevices
+                    Component {
+                        id: deviceRowDelegate
 
-                        delegate: Rectangle {
+                        Rectangle {
+                            id: deviceRow
+                            required property var device
                             Layout.fillWidth: true
                             height: 48
                             radius: 12
-                            color: devArea.containsMouse ? root.bgTrack : "transparent"
+                            color: (devArea.containsMouse || forgetDeviceArea.containsMouse) ? root.bgTrack : "transparent"
                             scale: devArea.pressed ? 0.98 : 1.0
 
                             Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
@@ -1132,7 +1179,7 @@ PanelWindow {
                                 spacing: 10
 
                                 Text {
-                                    visible: root.isBusy(modelData.dbusPath) || modelData.pairing
+                                    visible: root.isBusy(deviceRow.device.dbusPath) || deviceRow.device.pairing
                                     text: "…"
                                     font.pixelSize: 14
                                     color: root.accentPrimary
@@ -1140,8 +1187,8 @@ PanelWindow {
 
                                 Rectangle {
                                     id: forgetDeviceButton
-                                    visible: (modelData.paired || modelData.bonded) && !modelData.pairing
-                                    enabled: root.btEnabled && !root.isBusy(modelData.dbusPath)
+                                    visible: (deviceRow.device.paired || deviceRow.device.bonded) && !deviceRow.device.pairing
+                                    enabled: root.btEnabled && !root.isBusy(deviceRow.device.dbusPath)
                                     implicitWidth: forgetDeviceLabel.implicitWidth + 14
                                     height: 24
                                     radius: 8
@@ -1169,12 +1216,12 @@ PanelWindow {
                                         cursorShape: Qt.PointingHandCursor
                                         property var pressedDevice: null
 
-                                        onPressed: pressedDevice = modelData
+                                        onPressed: pressedDevice = deviceRow.device
                                         onCanceled: pressedDevice = null
                                         onClicked: {
                                             const dev = pressedDevice
                                             pressedDevice = null
-                                            if (dev && dev === modelData)
+                                            if (dev && dev === deviceRow.device)
                                                 root.forgetListedDevice(dev)
                                         }
                                     }
@@ -1185,7 +1232,7 @@ PanelWindow {
                                     spacing: 0
 
                                     Text {
-                                        text: modelData.name
+                                        text: deviceRow.device.name
                                         color: root.textMain
                                         font.pixelSize: 13
                                         elide: Text.ElideRight
@@ -1194,8 +1241,8 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: root.statusLabel(modelData)
-                                        color: modelData.paired ? root.accentPrimary : root.textDim
+                                        text: root.statusLabel(deviceRow.device)
+                                        color: deviceRow.device.paired ? root.accentPrimary : root.textDim
                                         font.pixelSize: 10
                                         horizontalAlignment: Text.AlignRight
                                         Layout.fillWidth: true
@@ -1207,9 +1254,9 @@ PanelWindow {
                                     width: 18; height: 18
                                     transformOrigin: Item.Center
 
-                                    readonly property string iconPath: root.safeIconPath(modelData.icon)
-                                    readonly property bool connectingThis: modelData.pairing
-                                        || root.isBusy(modelData.dbusPath)
+                                    readonly property string iconPath: root.safeIconPath(deviceRow.device.icon)
+                                    readonly property bool connectingThis: deviceRow.device.pairing
+                                        || root.isBusy(deviceRow.device.dbusPath)
 
                                     Image {
                                         anchors.fill: parent
@@ -1219,7 +1266,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         visible: parent.iconPath === ""
-                                        text: root.fallbackGlyph(modelData.icon)
+                                        text: root.fallbackGlyph(deviceRow.device.icon)
                                         font.pixelSize: 13
                                         color: root.textDim
                                     }
@@ -1227,23 +1274,17 @@ PanelWindow {
                                     SequentialAnimation on opacity {
                                         running: deviceIcon.connectingThis
                                         loops: Animation.Infinite
+                                        alwaysRunToEnd: true
                                         NumberAnimation { from: 1; to: 0.35; duration: 420; easing.type: Easing.InOutSine }
                                         NumberAnimation { from: 0.35; to: 1; duration: 420; easing.type: Easing.InOutSine }
-                                        onRunningChanged: {
-                                            if (!running)
-                                                deviceIcon.opacity = 1
-                                        }
                                     }
 
                                     SequentialAnimation on scale {
                                         running: deviceIcon.connectingThis
                                         loops: Animation.Infinite
+                                        alwaysRunToEnd: true
                                         NumberAnimation { from: 1; to: 1.22; duration: 420; easing.type: Easing.InOutSine }
                                         NumberAnimation { from: 1.22; to: 1; duration: 420; easing.type: Easing.InOutSine }
-                                        onRunningChanged: {
-                                            if (!running)
-                                                deviceIcon.scale = 1
-                                        }
                                     }
                                 }
                             }
@@ -1256,12 +1297,12 @@ PanelWindow {
                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                                 property var pressedDevice: null
 
-                                onPressed: pressedDevice = modelData
+                                onPressed: pressedDevice = deviceRow.device
                                 onCanceled: pressedDevice = null
                                 onClicked: function(mouse) {
                                     const dev = pressedDevice
                                     pressedDevice = null
-                                    if (!dev || dev !== modelData)
+                                    if (!dev || dev !== deviceRow.device)
                                         return
                                     if (mouse.button === Qt.RightButton)
                                         root.forgetListedDevice(dev)
@@ -1274,8 +1315,49 @@ PanelWindow {
 
                     Text {
                         Layout.fillWidth: true
+                        Layout.rightMargin: 10
+                        visible: savedDeviceModel.count > 0
+                        text: "Сохранённые"
+                        color: root.textDim
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignRight
+                    }
+
+                    Repeater {
+                        model: savedDeviceModel
+                        delegate: deviceRowDelegate
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 4
+                        Layout.bottomMargin: 4
+                        height: 1
+                        color: root.separatorColor
+                        visible: savedDeviceModel.count > 0 && newDeviceModel.count > 0
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.rightMargin: 10
+                        visible: newDeviceModel.count > 0
+                        text: "Новые"
+                        color: root.textDim
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignRight
+                    }
+
+                    Repeater {
+                        model: newDeviceModel
+                        delegate: deviceRowDelegate
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
                         Layout.topMargin: 8
-                        visible: root.listDevices.length === 0 && !root.scanning
+                        visible: savedDeviceModel.count === 0 && newDeviceModel.count === 0 && !root.scanning
                         text: "Устройства не найдены"
                         color: root.textDim
                         font.pixelSize: 12
@@ -1453,13 +1535,19 @@ PanelWindow {
         //----------------SETTINGS----------------
         Rectangle {
             anchors.fill: parent
+            z: 30
             radius: 8
             color: Qt.rgba(0, 0, 0, 0.55)
             visible: root.deviceSettingsVisible
+            opacity: root.deviceSettingsVisible ? 1 : 0
+
+            Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
             MouseArea {
                 anchors.fill: parent
+                hoverEnabled: true
                 onClicked: {}
+                onWheel: function(wheel) { wheel.accepted = true }
             }
 
             Rectangle {
