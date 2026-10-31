@@ -7,17 +7,24 @@ import Quickshell.Hyprland
 PanelWindow {
     id: root
 
-    // ------------------- VISIBILITY --------------------
+    //------------------STATE-----------------------
     property bool menuVisible: false
-    // ------------------- CLOSING -----------------------
     property bool closing: false
-    property bool everOpened: false
-    visible: everOpened
+    property bool hasShown: false
+    property int savedWorkspaceId: 0
+    property string savedWorkspaceName: ""
+    property bool restoreWorkspaceOnClose: false
+    visible: hasShown
 
-    // ---------------- BACKGROUND ----------------------
     color: "transparent"
+    focusable: menuVisible
+    exclusionMode: ExclusionMode.Auto
+    mask: menuVisible ? panelRegion : emptyRegion
 
-    // ----------------- PALETTE ------------------------
+    Region { id: emptyRegion; width: 0; height: 0 }
+    Region { id: panelRegion; item: panel }
+
+    //------------------COLORS-----------------------
     readonly property color accentPrimary: "{{theme.accent_primary.hex}}"
     readonly property color accentSecondary: "{{theme.accent_secondary.hex}}"
     readonly property color bgPanel: "{{theme.bg_panel_battery.hex}}"
@@ -25,7 +32,7 @@ PanelWindow {
     readonly property color borderColor: "{{theme.accent_primary.hex}}"
     readonly property color textMain: "{{theme.text_main.hex}}"
 
-    // ----------------- ANCHORS -------------------------
+    //------------------LAYOUT-----------------------
     anchors {
         top: true
         right: true
@@ -35,22 +42,44 @@ PanelWindow {
         right: 3
     }
 
-    // ---------------- SIZES ----------------------------
     readonly property int fullWidth: 64
     readonly property int fullHeight: 258
     readonly property int lineThickness: 8
 
-    // ------------- ANIMSTATE --------------------------
     property real animWidth: lineThickness
     property real animHeight: 0
 
-    implicitWidth: animWidth
-    implicitHeight: animHeight
+    implicitWidth: fullWidth
+    implicitHeight: fullHeight
 
-    //--------------- TOGGLE ---------------------------
+    //------------------TOGGLE-----------------------
+    function show() { menuVisible = true }
+
+    function hide() {
+        if (!menuVisible) return
+        restoreWorkspaceOnClose = true
+        menuVisible = false
+    }
+
+    function toggle() { if (menuVisible) hide(); else show() }
+
+    function restoreSavedWorkspace() {
+        const current = Hyprland.focusedWorkspace
+        if (current && current.id === savedWorkspaceId) return
+        if (savedWorkspaceId > 0) {
+            Hyprland.dispatch("workspace " + savedWorkspaceId)
+        } else if (savedWorkspaceId < 0 && savedWorkspaceName !== "" &&
+                   savedWorkspaceName !== "special" && savedWorkspaceName.indexOf("special:") !== 0) {
+            Hyprland.dispatch("workspace name:" + savedWorkspaceName)
+        }
+    }
+
     onMenuVisibleChanged: {
         if (menuVisible) {
-            root.everOpened = true
+            const workspace = Hyprland.focusedWorkspace
+            savedWorkspaceId = workspace ? workspace.id : 0
+            savedWorkspaceName = workspace ? workspace.name : ""
+            restoreWorkspaceOnClose = true
             closeAnimation.stop()
             closing = false
 
@@ -62,16 +91,31 @@ PanelWindow {
 
             animWidth = lineThickness
             animHeight = 0
+            hasShown = true
             openAnimation.restart()
+            Qt.callLater(function() {
+                if (!root.menuVisible) return
+                grab.active = true
+                panel.forceActiveFocus()
+            })
         } else {
             openAnimation.stop()
             buttonsAppearAnimation.stop()
             closing = true
+            grab.active = false
+            btn1.cancelHold()
+            btn2.cancelHold()
+            btn3.cancelHold()
+            btn4.cancelHold()
+            if (restoreWorkspaceOnClose) restoreSavedWorkspace()
+            restoreWorkspaceOnClose = false
+            savedWorkspaceId = 0
+            savedWorkspaceName = ""
             closeAnimation.restart()
         }
     }
 
-    // ----------------- OPEN ----------------------------
+    //------------------ANIMATIONS-----------------------
     SequentialAnimation {
         id: openAnimation
 
@@ -90,10 +134,9 @@ PanelWindow {
             easing.type: Easing.OutQuad
         }
 
-        onFinished: buttonsAppearAnimation.restart()
+        onFinished: { if (root.menuVisible) buttonsAppearAnimation.restart() }
     }
 
-    // ----------------------- APPEAR ----------------------------
     SequentialAnimation {
         id: buttonsAppearAnimation
 
@@ -131,7 +174,6 @@ PanelWindow {
         }
     }
 
-    // -------------------------- CLOSE ---------------------------------
     SequentialAnimation {
         id: closeAnimation
 
@@ -181,75 +223,62 @@ PanelWindow {
         }
 
         ScriptAction {
-            script: root.closing = false
+            script: { if (!root.menuVisible) root.closing = false }
         }
     }
 
-    // ----------------------- IPC ------------------------
+    //------------------IPC-----------------------
     IpcHandler {
         target: "powermenu"
 
         function toggle(): void {
-            root.menuVisible = !root.menuVisible
+            root.toggle()
         }
 
         function show(): void {
-            root.menuVisible = true
+            root.show()
         }
 
         function hide(): void {
+            root.hide()
+        }
+    }
+
+    HyprlandFocusGrab {
+        id: grab
+        windows: [root]
+        onCleared: {
+            if (!root.menuVisible) return
+            root.restoreWorkspaceOnClose = false
             root.menuVisible = false
         }
     }
 
-    // ---------------- FOCUSGRAB -----------------------------
-    HyprlandFocusGrab {
-        id: grab
-        windows: [root]
-        active: root.menuVisible
-        onCleared: root.menuVisible = false
-    }
-
-    // ---------------- KEYBOARD (ESC TO CLOSE) ----------------
-    Item {
-        anchors.fill: parent
-        focus: root.menuVisible
-
-        Keys.onEscapePressed: root.menuVisible = false
-    }
-
-    // -------------------- BUTTON -----------------------------
+    //------------------POWERBUTTON-----------------------
     component PowerButton: Rectangle {
         id: btn
 
         property string iconText: ""
         signal clicked()
 
-        // ---------------------- HOLDTIME ------------------------
         readonly property int holdDuration: 1500
+
+        function cancelHold() {
+            holdAnimation.stop()
+            holdFill.height = 0
+        }
+
+        onEnabledChanged: { if (!enabled) cancelHold() }
 
         Layout.fillWidth: true
         Layout.preferredHeight: 52
 
-        // ----------------------- SCALE ---------------------------
         scale: 0
-
-        // ------------------- PRESS SQUISH -------------------------
-        transform: Scale {
-            origin.x: btn.width / 2
-            origin.y: btn.height / 2
-            xScale: mouseArea.pressed ? 0.93 : 1.0
-            yScale: mouseArea.pressed ? 0.93 : 1.0
-
-            Behavior on xScale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
-            Behavior on yScale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
-        }
-
-        // STYLE
         radius: 10
         border.width: mouseArea.pressed ? 2 : 1
         border.color: root.accentSecondary
-        color: mouseArea.pressed ? "transparent" : (mouseArea.containsMouse ? root.accentSecondary : root.accentPrimary)
+        color: mouseArea.pressed ? root.bgPanel : (mouseArea.containsMouse ? root.accentSecondary : root.accentPrimary)
+        clip: true
 
         Behavior on color {
             ColorAnimation { duration: 120 }
@@ -258,10 +287,6 @@ PanelWindow {
             NumberAnimation { duration: 120 }
         }
 
-        // -------------------- CLIP --------------------------
-        clip: true
-
-        // ---------------------- FILL ------------------------
         Rectangle {
             id: holdFill
             anchors.left: parent.left
@@ -269,10 +294,19 @@ PanelWindow {
             anchors.bottom: parent.bottom
             height: 0
             radius: btn.radius
-            color: root.accentPrimary
+            color: "transparent"
+            clip: true
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: btn.height
+                radius: btn.radius
+                color: root.accentPrimary
+            }
         }
 
-        // ---------------- REMAINING ----------------------------
         readonly property real holdRemaining: btn.holdDuration / 1000 * (1 - holdFill.height / btn.height)
 
         NumberAnimation {
@@ -283,24 +317,23 @@ PanelWindow {
             to: btn.height
             duration: btn.holdDuration
             easing.type: Easing.Linear
-            onFinished: btn.clicked()
+            onFinished: {
+                if (root.menuVisible && btn.enabled && mouseArea.pressed) btn.clicked()
+            }
         }
 
-        // --------------------------- ICON -------------------------
         Text {
             anchors.centerIn: parent
             text: mouseArea.pressed ? btn.holdRemaining.toFixed(1) : btn.iconText
             color: mouseArea.pressed ? root.accentPrimary : root.bgPanel
+            font.pixelSize: mouseArea.pressed ? 16 : 20
+            font.family: "Symbols Nerd Font"
 
             Behavior on color {
                 ColorAnimation { duration: 120 }
             }
-
-            font.pixelSize: mouseArea.pressed ? 16 : 20
-            font.family: "Symbols Nerd Font"
         }
 
-        // --------------------- OVERLAY ------------------------
         Item {
             anchors.left: parent.left
             anchors.right: parent.right
@@ -318,7 +351,6 @@ PanelWindow {
             }
         }
 
-        // ------------------------- MOUSE ------------------------
         MouseArea {
             id: mouseArea
             anchors.fill: parent
@@ -329,25 +361,28 @@ PanelWindow {
                 holdFill.height = 0
                 holdAnimation.restart()
             }
-            onReleased: {
-                holdAnimation.stop()
-                holdFill.height = 0
-            }
-            onCanceled: {
-                holdAnimation.stop()
-                holdFill.height = 0
-            }
+            onReleased: btn.cancelHold()
+            onCanceled: btn.cancelHold()
         }
     }
 
-    // -------------------------- PANEL ---------------------------
+    //------------------PANEL-----------------------
     Rectangle {
-        anchors.fill: parent
+        id: panel
+        anchors.top: parent.top
+        anchors.right: parent.right
+        width: root.animWidth
+        height: root.animHeight
+        opacity: root.menuVisible || root.closing ? 1 : 0
+        enabled: root.menuVisible
+        clip: true
         color: root.bgPanel
-        // ----------------------- RADIUS --------------------------
         radius: Math.min(8, root.animWidth / 2, root.animHeight / 2)
         border.width: 3
         border.color: root.borderColor
+
+        focus: root.menuVisible
+        Keys.onEscapePressed: root.hide()
 
         ColumnLayout {
             anchors.fill: parent
@@ -356,42 +391,43 @@ PanelWindow {
 
             PowerButton {
                 id: btn1
-                iconText: "\uf011" // power off
+                iconText: "\uf011"
                 onClicked: {
-                    root.menuVisible = false
+                    root.hide()
                     poweroffProcess.running = true
                 }
             }
 
             PowerButton {
                 id: btn2
-                iconText: "\uf021" // reboot
+                iconText: "\uf021"
                 onClicked: {
-                    root.menuVisible = false
+                    root.hide()
                     rebootProcess.running = true
                 }
             }
 
             PowerButton {
                 id: btn3
-                iconText: "\uf08b" // exit Hyprland
+                iconText: "\uf08b"
                 onClicked: {
-                    root.menuVisible = false
+                    root.hide()
                     exitProcess.running = true
                 }
             }
 
             PowerButton {
                 id: btn4
-                iconText: "\uf023" // lock
+                iconText: "\uf023"
                 onClicked: {
-                    root.menuVisible = false
+                    root.hide()
                     lockProcess.running = true
                 }
             }
         }
     }
 
+    //------------------PROCESSES-----------------------
     Process {
         id: poweroffProcess
         command: ["systemctl", "poweroff"]
@@ -404,7 +440,7 @@ PanelWindow {
 
     Process {
         id: exitProcess
-        command: ["uwsm", "stop"]
+        command: ["bash", "-c", "loginctl terminate-session $XDG_SESSION_ID && uwsm stop"]
     }
 
     Process {
