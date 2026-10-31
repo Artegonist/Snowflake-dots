@@ -66,7 +66,7 @@
         "on-click": "~/.config/waybar/scripts/playbutton.sh toggle",
         "on-click-right": "qs -c player-module ipc call player toggle",
         "signal": 8,
-        "interval": 0.1,
+        "interval": 3,
         "tooltip": false
     },
     "custom/prevbutton": {
@@ -184,10 +184,11 @@
         "format-icons":[""]
     },
     "temperature": {
-        "interval": 5,
+        "interval": 1,
         "tooltip": false,
+        "hwmon-path-abs": "/sys/devices/platform/coretemp.0/hwmon",
+        "input-filename": "temp1_input",
         "on-click": "qs -c system-info ipc call sysinfo toggle",
-        "hwmon-path": "/sys/class/hwmon/hwmon5/temp1_input",       
         "format": "{icon} {temperatureC}°",
         "format-icons": ["","","",""]
     },
