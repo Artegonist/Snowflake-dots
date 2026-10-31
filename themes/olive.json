@@ -1,0 +1,19 @@
+{
+  "theme": {
+    "accent_primary":     { "color": "#9a9848" },
+    "accent_secondary":   { "color": "#6e6c32" },
+    "bg_panel_waybar":    { "color": "#191a12" },
+    "bg_panel_battery":   { "color": "#1a1b13" },
+    "bg_track":           { "color": "#2a2b1d" },
+    "bg_input_wofi":      { "color": "#212216" },
+    "text_main":          { "color": "#f0f0e0" },
+    "text_dim":           { "color": "#9a9a7a" },
+    "text_waybar":        { "color": "#c4c48a" },
+    "workspace_active":   { "color": "#9a9848" },
+    "hover_light":        { "color": "#d4d4a0" },
+    "hover_wofi_select":  { "color": "#c0be6e" },
+    "wofi_input_text":    { "color": "#f2f2e4" },
+    "wofi_accent_text":   { "color": "#d6d494" },
+    "clock_glow":         { "color": "#191a12" }
+  }
+}
