@@ -6,6 +6,8 @@ MENU_HEIGHT=250
 SHIFT=20
 MARGIN=3
 
+cd ~/.config/wofi || exit 1
+
 pkill -u "$(id -u)" -x wofi && exit 0
 
 CLIENTS=$(hyprctl clients -j) || exit 1
