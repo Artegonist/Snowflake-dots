@@ -1,4 +1,4 @@
-@import "/home/artegonist/.config/wofi/colors.css";
+@import "colors.css";
 
 window {
     background-color: rgba(0, 0, 0, 0.5);
