@@ -286,7 +286,7 @@ PanelWindow {
         const op = root.deviceOps[path]
         if (op) op.bounce = val
     }
-    // Сбрасывает все незавершённые операции разом (одно обновление вместо каскада endOp).
+    
     function clearOps() {
         if (Object.keys(root.deviceOps).length === 0) return
         root.deviceOps = ({})
