@@ -56,6 +56,12 @@ PanelWindow {
             show()
     }
 
+    function openEqualizer() {
+        root.currentTab = "eq"
+        if (!root.expanded || root.closing)
+            root.show()
+    }
+
     Timer {
         id: returnToWorkspaceTimer
         interval: 30
@@ -110,20 +116,13 @@ PanelWindow {
         onCleared: root.closeInternal(false)
     }
 
-    IpcHandler {
-        target: "audio"
-
-        function toggle(): void {
-            root.toggle()
-        }
-    }
 
     onVisibleChanged: {
         if (visible && !root.expanded)
             root.expanded = true
     }
 
-    // ------------------------- PIPEWIRE NODES -------------------------
+    // ------------------------- PIPEWIRE -------------------------
 
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource, ...root.streamNodes, ...root.outputDevices, ...root.inputDevices]
@@ -200,7 +199,7 @@ PanelWindow {
         return list
     }
 
-    // ------------------------- COMPONENT: VolumeRow — горизонтальный слайдер громкости -------------------------
+    // ------------------------- SLIDER 1 -------------------------
 
     component VolumeRow: ColumnLayout {
         id: row
@@ -365,7 +364,7 @@ PanelWindow {
         }
     }
 
-    // ------------------------- COMPONENT: BalanceSlider — стерео-баланс L/R для мастер-выхода -------------------------
+    // ------------------------- SLIDER 2 -------------------------
 
     component BalanceSlider: RowLayout {
         id: balancer
@@ -517,7 +516,7 @@ PanelWindow {
         }
     }
 
-    // ------------------------- COMPONENT: EqBandSlider — вертикальный слайдер полосы эквалайзера -------------------------
+    // ------------------------- SLIDER 3 -------------------------
 
     component EqBandSlider: ColumnLayout {
         id: bandItem
@@ -798,7 +797,7 @@ PanelWindow {
         }
     }
 
-    // ------------------------- COMPONENT: MixerPage — выход / вход / потоки приложений -------------------------
+    // ------------------------- MIXER -------------------------
 
     component MixerPage: Item {
         id: page
@@ -934,7 +933,7 @@ PanelWindow {
         }
     }
 
-    // ------------------------- COMPONENT: EqPage — 8-полосный эквалайзер с пресетами -------------------------
+    // ------------------------- EQ -------------------------
 
     component EqPage: Item {
         id: eqPage
