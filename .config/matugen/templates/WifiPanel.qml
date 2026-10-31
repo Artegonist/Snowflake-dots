@@ -149,7 +149,8 @@ PanelWindow {
     property int deviceSnapshotEpoch: -1
     readonly property var nmcliEnvironment: ({ LC_ALL: "C", LANG: "C", NO_COLOR: "1", PAGER: "" })
 
-    ListModel { id: networkModel }
+    ListModel { id: savedNetworkModel }
+    ListModel { id: newNetworkModel }
 
     onAvailableNetworksChanged: root.syncNetworkModel()
 
@@ -524,32 +525,45 @@ PanelWindow {
     }
 
     function syncNetworkModel() {
-        if (!networkModel)
+        if (!savedNetworkModel || !newNetworkModel)
             return
-        const list = root.availableNetworks
+        const saved = []
+        const fresh = []
+        for (const network of root.availableNetworks) {
+            if (network.known)
+                saved.push(network)
+            else
+                fresh.push(network)
+        }
+        root.syncNetworkList(savedNetworkModel, saved)
+        root.syncNetworkList(newNetworkModel, fresh)
+    }
+
+    function syncNetworkList(model, list) {
         const roles = ["ssid", "signal", "security", "secure", "needsPassword", "active", "iface", "known"]
         for (let i = 0; i < list.length; i++) {
             const network = list[i]
             let existing = -1
-            for (let j = i; j < networkModel.count; j++) {
-                if (networkModel.get(j).ssid === network.ssid) {
+            for (let j = i; j < model.count; j++) {
+                if (model.get(j).ssid === network.ssid) {
                     existing = j
                     break
                 }
             }
             if (existing === -1) {
-                networkModel.insert(i, network)
+                model.insert(i, network)
             } else {
                 if (existing !== i)
-                    networkModel.move(existing, i, 1)
+                    model.move(existing, i, 1)
+                const current = model.get(i)
                 for (const role of roles) {
-                    if (networkModel.get(i)[role] !== network[role])
-                        networkModel.setProperty(i, role, network[role])
+                    if (current[role] !== network[role])
+                        model.setProperty(i, role, network[role])
                 }
             }
         }
-        if (networkModel.count > list.length)
-            networkModel.remove(list.length, networkModel.count - list.length)
+        if (model.count > list.length)
+            model.remove(list.length, model.count - list.length)
     }
 
     function updateNetworkProfiles() {
@@ -1092,6 +1106,11 @@ PanelWindow {
                     scale: changeScale
                     transformOrigin: Item.Center
 
+                    Behavior on implicitHeight {
+                        enabled: card.opacity === 1
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+
                     ParallelAnimation {
                         id: connectionStateAnim
                         NumberAnimation {
@@ -1165,7 +1184,9 @@ PanelWindow {
 
                     ColumnLayout {
                         id: connectionColumn
-                        anchors.fill: parent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.margins: 10
                         spacing: 8
 
@@ -1298,6 +1319,7 @@ PanelWindow {
                             RotationAnimation on rotation {
                                 running: root.scanning
                                 loops: Animation.Infinite
+                                alwaysRunToEnd: true
                                 from: 0
                                 to: 360
                                 duration: 900
@@ -1332,8 +1354,20 @@ PanelWindow {
                 clip: true
                 visible: root.wifiEnabled
                 contentHeight: networkColumn.height
+                flickableDirection: Flickable.VerticalFlick
                 boundsBehavior: Flickable.StopAtBounds
                 opacity: 0
+
+                function clampContent() {
+                    if (networkList.moving)
+                        return
+                    const maxY = Math.max(0, networkList.contentHeight - networkList.height)
+                    if (networkList.contentY > maxY)
+                        networkList.contentY = maxY
+                }
+
+                onContentHeightChanged: networkList.clampContent()
+                onHeightChanged: networkList.clampContent()
 
                 transform: Translate {
                     id: networkListTranslate
@@ -1345,10 +1379,10 @@ PanelWindow {
                     width: parent.width
                     spacing: 6
 
-                    Repeater {
-                        model: networkModel
+                    Component {
+                        id: networkRowDelegate
 
-                        delegate: Rectangle {
+                        Rectangle {
                             id: networkRow
                             required property var model
                             readonly property var modelData: model
@@ -1358,7 +1392,7 @@ PanelWindow {
                             height: 48
                             radius: 12
                             color: modelData.active ? root.workspaceActive
-                                   : netArea.containsMouse ? root.bgTrack : "transparent"
+                                   : (netArea.containsMouse || forgetNetworkArea.containsMouse) ? root.bgTrack : "transparent"
                             scale: netArea.pressed ? 0.98 : 1.0
                             transformOrigin: Item.Center
 
@@ -1395,23 +1429,17 @@ PanelWindow {
                                     SequentialAnimation on opacity {
                                         running: networkSignalIcon.connectingThis
                                         loops: Animation.Infinite
+                                        alwaysRunToEnd: true
                                         NumberAnimation { from: 1; to: 0.35; duration: 420; easing.type: Easing.InOutSine }
                                         NumberAnimation { from: 0.35; to: 1; duration: 420; easing.type: Easing.InOutSine }
-                                        onRunningChanged: {
-                                            if (!running)
-                                                networkSignalIcon.opacity = 1
-                                        }
                                     }
 
                                     SequentialAnimation on scale {
                                         running: networkSignalIcon.connectingThis
                                         loops: Animation.Infinite
+                                        alwaysRunToEnd: true
                                         NumberAnimation { from: 1; to: 1.22; duration: 420; easing.type: Easing.InOutSine }
                                         NumberAnimation { from: 1.22; to: 1; duration: 420; easing.type: Easing.InOutSine }
-                                        onRunningChanged: {
-                                            if (!running)
-                                                networkSignalIcon.scale = 1
-                                        }
                                     }
                                 }
 
@@ -1506,6 +1534,45 @@ PanelWindow {
                                 }
                             }
                         }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 10
+                        visible: savedNetworkModel.count > 0
+                        text: "Сохранённые"
+                        color: root.textDim
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                    }
+
+                    Repeater {
+                        model: savedNetworkModel
+                        delegate: networkRowDelegate
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 4
+                        Layout.bottomMargin: 4
+                        height: 1
+                        color: root.separatorColor
+                        visible: savedNetworkModel.count > 0 && newNetworkModel.count > 0
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 10
+                        visible: newNetworkModel.count > 0
+                        text: "Новые"
+                        color: root.textDim
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                    }
+
+                    Repeater {
+                        model: newNetworkModel
+                        delegate: networkRowDelegate
                     }
 
                     Text {
@@ -1689,13 +1756,19 @@ PanelWindow {
         //----------------PASSWORD----------------
         Rectangle {
             anchors.fill: parent
+            z: 30
             radius: 8
             color: Qt.rgba(0, 0, 0, 0.55)
             visible: root.passwordPromptVisible
+            opacity: root.passwordPromptVisible ? 1 : 0
+
+            Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
             MouseArea {
                 anchors.fill: parent
+                hoverEnabled: true
                 onClicked: {}
+                onWheel: function(wheel) { wheel.accepted = true }
             }
 
             Rectangle {
