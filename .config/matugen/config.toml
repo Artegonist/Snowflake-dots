@@ -38,20 +38,23 @@ output_path = '~/.config/quickshell/bluetooth-panel/BluetoothPanel.qml'
 input_path = '~/.config/matugen/templates/AudioPanel.qml'
 output_path = '~/.config/quickshell/audio-module/AudioPanel.qml'
 
+[templates.pet_habitat]
+input_path = '~/.config/matugen/templates/PetModule.qml'
+output_path = '~/.config/quickshell/pet-habitat/PetModule.qml'
 
+[templates.player_panel]
+input_path = '~/.config/matugen/templates/PlayerPanel.qml'
+output_path = '~/.config/quickshell/player-module/PlayerPanel.qml'
 
+[templates.system_info]
+input_path = '~/.config/matugen/templates/SystemInfo.qml'
+output_path = '~/.config/quickshell/system-info/SystemInfo.qml'
+
+[templates.macropanel]
+input_path = '~/.config/matugen/templates/MacroPanel.qml'
+output_path = '~/.config/quickshell/macrobar-module/MacroPanel.qml'
  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+[templates.hub_module]
+input_path = '~/.config/matugen/templates/hub-colors.json'
+output_path = '~/.config/quickshell/hub-module/colors.json'
