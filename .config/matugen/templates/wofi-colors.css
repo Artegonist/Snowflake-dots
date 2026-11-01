@@ -1,5 +1,0 @@
-@define-color accent_primary {{theme.accent_primary.hex}};
-@define-color bg_input_wofi {{theme.bg_input_wofi.hex}};
-@define-color wofi_input_text {{theme.wofi_input_text.hex}};
-@define-color wofi_accent_text {{theme.wofi_accent_text.hex}};
-@define-color hover_wofi_select {{theme.hover_wofi_select.hex}};
