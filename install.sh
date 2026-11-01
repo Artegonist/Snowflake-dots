@@ -231,7 +231,8 @@ install_quickshell() {
 
     dir="$BUILD_DIR/cpptrace"
     fetch_git "$CPPTRACE_REPO" "$dir" "$CPPTRACE_REV"
-    cmake -S "$dir" -B "$dir/build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+    cmake -S "$dir" -B "$dir/build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCPPTRACE_UNWIND_WITH_LIBUNWIND=ON
     cmake --build "$dir/build"
     sudo cmake --install "$dir/build"
 
