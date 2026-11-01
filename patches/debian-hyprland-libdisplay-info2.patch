@@ -1,0 +1,17 @@
+diff --git a/install-scripts/00-dependencies.sh b/install-scripts/00-dependencies.sh
+index 15063a0..9474835 100755
+--- a/install-scripts/00-dependencies.sh
++++ b/install-scripts/00-dependencies.sh
+@@ -376,10 +376,10 @@ install_first_available() {
+ install_libdisplay_info() {
+     case "${DEBIAN_SUITE:-}" in
+     sid | forky)
+-        install_first_available "libdisplay-info runtime" libdisplay-info3 libdisplay-info2 || return 1
++        install_first_available "libdisplay-info runtime" libdisplay-info2 libdisplay-info2 || return 1
+         ;;
+     *)
+-        install_first_available "libdisplay-info runtime" libdisplay-info2 libdisplay-info3 || return 1
++        install_first_available "libdisplay-info runtime" libdisplay-info2 libdisplay-info2 || return 1
+         ;;
+     esac
+     install_if_available libdisplay-info-dev || true

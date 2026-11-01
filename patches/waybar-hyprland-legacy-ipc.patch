@@ -1,0 +1,21 @@
+diff --git a/src/modules/hyprland/backend.cpp b/src/modules/hyprland/backend.cpp
+index 891bed1a..503db62c 100644
+--- a/src/modules/hyprland/backend.cpp
++++ b/src/modules/hyprland/backend.cpp
+@@ -293,6 +293,7 @@ Json::Value IPC::getSocket1JsonReply(const std::string& rq) {
+ }
+ 
+ bool IPC::isLuaProtocol() {
++  return false; // FORCE: this Hyprland build lacks real hl.dsp Lua support
+   if (s_luaProtocolDetected_.has_value()) {
+     return *s_luaProtocolDetected_;
+   }
+@@ -323,7 +324,7 @@ bool IPC::isLuaProtocol() {
+       if (dot != std::string::npos && dot + 1 < versionStr.size()) {
+         minor = std::stoi(versionStr.substr(dot + 1));
+       }
+-      luaProto = major > 0 || (major == 0 && minor >= 54);
++      luaProto = major > 0 || (major == 0 && minor >= 55);
+     } else {
+       spdlog::warn("Hyprland IPC: could not parse version '{}', assuming legacy protocol",
+                    versionStr);
