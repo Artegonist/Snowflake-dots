@@ -14,47 +14,10 @@ post_hook = "pkill -SIGUSR2 waybar"
 input_path = "~/.config/matugen/templates/wofi-colors.css"
 output_path = "~/.config/wofi/colors.css"
  
-[templates.battery_panel]
-input_path = "~/.config/matugen/templates/BatteryPanel.qml"
-output_path = "~/.config/quickshell/battery-panel/BatteryPanel.qml"
+[templates.snowflake]
+input_path = '~/.config/matugen/templates/snowflake-colors.json'
+output_path = '~/.config/quickshell/snowflake/colors.json'
 
-[templates.power_menu]
-input_path = "~/.config/matugen/templates/PowerMenu.qml"
-output_path = "~/.config/quickshell/power-menu/PowerMenu.qml"
-
-[templates.wifi_panel]
-input_path = '~/.config/matugen/templates/WifiPanel.qml'
-output_path = '~/.config/quickshell/wifi-panel/WifiPanel.qml'
-
-[templates.osd_panel]
-input_path = '~/.config/matugen/templates/OsdModule.qml'
-output_path = '~/.config/quickshell/osd-module/OsdModule.qml'
-
-[templates.bluetooth_panel]
-input_path = '~/.config/matugen/templates/BluetoothPanel.qml'
-output_path = '~/.config/quickshell/bluetooth-panel/BluetoothPanel.qml'
-
-[templates.audio_panel]
-input_path = '~/.config/matugen/templates/AudioPanel.qml'
-output_path = '~/.config/quickshell/audio-module/AudioPanel.qml'
-
-[templates.pet_habitat]
-input_path = '~/.config/matugen/templates/PetModule.qml'
-output_path = '~/.config/quickshell/pet-habitat/PetModule.qml'
-
-[templates.player_panel]
-input_path = '~/.config/matugen/templates/PlayerPanel.qml'
-output_path = '~/.config/quickshell/player-module/PlayerPanel.qml'
-
-[templates.system_info]
-input_path = '~/.config/matugen/templates/SystemInfo.qml'
-output_path = '~/.config/quickshell/system-info/SystemInfo.qml'
-
-[templates.macropanel]
-input_path = '~/.config/matugen/templates/MacroPanel.qml'
-output_path = '~/.config/quickshell/macrobar-module/MacroPanel.qml'
- 
-
-[templates.hub_module]
-input_path = '~/.config/matugen/templates/hub-colors.json'
-output_path = '~/.config/quickshell/hub-module/colors.json'
+[templates.clipboard_module]
+input_path = '~/.config/matugen/templates/clipboard-colors.json'
+output_path = '~/.config/quickshell/clipboard-module/colors.json'
