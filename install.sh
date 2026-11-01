@@ -168,7 +168,6 @@ install_hyprland() {
     step "Hyprland 0.55.3 via Debian-Hyprland v3.2.3"
     local dir="$BUILD_DIR/Debian-Hyprland"
     fetch_git "$DH_REPO" "$dir" "$DH_REV"
-    apply_patch "$dir" debian-hyprland-libdisplay-info2.patch
     cp "$REPO_DIR/installer/debian-hyprland-preset.sh" "$dir/snowflake-preset.sh"
 
     cat <<'EOF'
@@ -190,6 +189,32 @@ EOF
         apt_install hyprlock
         ok "hyprlock from apt, source build kept as hyprlock.disabled"
     fi
+}
+
+# ------------------------- SESSION -------------------------
+ensure_uwsm_session() {
+    step "Hyprland session through uwsm"
+    command -v uwsm >/dev/null || apt_install uwsm
+    command -v uwsm >/dev/null || die "uwsm is not installed"
+    local f src=""
+    for f in /usr/share/wayland-sessions/hyprland-uwsm.desktop /usr/local/share/wayland-sessions/hyprland-uwsm.desktop; do
+        [[ -f "$f" ]] && { src="$f"; break; }
+    done
+    if [[ -z "$src" ]]; then
+        sudo install -d /usr/share/wayland-sessions
+        printf '%s\n' '[Desktop Entry]' 'Name=Hyprland (uwsm-managed)' 'Comment=Hyprland compositor managed by UWSM' \
+            'Exec=uwsm start -e -D Hyprland hyprland.desktop' 'TryExec=uwsm' 'DesktopNames=Hyprland' 'Type=Application' \
+            | sudo tee /usr/share/wayland-sessions/hyprland-uwsm.desktop >/dev/null
+        ok "Created /usr/share/wayland-sessions/hyprland-uwsm.desktop"
+    elif [[ "$src" == /usr/local/* && ! -e /usr/share/wayland-sessions/hyprland-uwsm.desktop ]]; then
+        sudo install -d /usr/share/wayland-sessions
+        sudo ln -s "$src" /usr/share/wayland-sessions/hyprland-uwsm.desktop
+        ok "Linked $src into /usr/share/wayland-sessions so every login manager sees it"
+    else
+        ok "Session file: $src"
+    fi
+    [[ -e /usr/share/wayland-sessions/hyprland.desktop || -e /usr/local/share/wayland-sessions/hyprland.desktop ]] \
+        || warn "hyprland.desktop not found, uwsm needs it to start Hyprland"
 }
 
 # ------------------------- QUICKSHELL -------------------------
@@ -406,7 +431,7 @@ enable_services() {
 verify() {
     step "Checking the result"
     local cmd fail=0
-    for cmd in Hyprland hyprctl hypridle hyprlock qs waybar wofi matugen hyprshot swaybg cliphist kitty fastfetch nmcli; do
+    for cmd in Hyprland hyprctl uwsm hypridle hyprlock qs waybar wofi matugen hyprshot swaybg cliphist kitty fastfetch nmcli; do
         if command -v "$cmd" >/dev/null; then
             ok "$cmd → $(command -v "$cmd")"
         else
@@ -448,6 +473,7 @@ if (( ! DOTS_ONLY )); then
     install_wofi
     install_hyprshot
 fi
+(( DOTS_ONLY )) || ensure_uwsm_session
 install_matugen
 install_fonts
 install_themes
