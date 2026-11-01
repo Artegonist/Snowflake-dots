@@ -1,50 +1,39 @@
 {
   "_default": [
-    { "icon": "", "launch": ["code", "code"] },
-    { "icon": "\udb81\udc2b", "launch": ["UltiMaker-Cura",
-        "/usr/bin/env",
-        "QT_QPA_PLATFORM=xcb",
-        "LD_LIBRARY_PATH=/home/artegonist/.local/share/cura-compat/usr/lib/x86_64-linux-gnu",
-        "/home/artegonist/Документи/UltiMaker-Cura-5.13.0-linux-X64.AppImage"] },
-    { "icon": "\udb80\udfeb", "launch": ["obsidian", "obsidian"] },
-    { "icon": "", "launch": ["org.telegram.desktop",
-        "/home/artegonist/Документи/tsetup.7.0.5/Telegram/Telegram"] }
+    { "icon": "", "launch": ["kitty", "kitty"] },
+    { "icon": "", "launch": ["org.gnome.Nautilus", "nautilus"] },
+    { "icon": "", "launch": ["firefox-esr", "firefox"] }
   ],
   "spotify": [
     { "icon": "󰒮", "exec": ["playerctl", "-p", "spotify", "previous"] },
     { "icon": "󰐎", "exec": ["playerctl", "-p", "spotify", "play-pause"] },
     { "icon": "󰒭", "exec": ["playerctl", "-p", "spotify", "next"] },
-    { "icon": "", "exec": ["playerctl", "-p", "spotify", "shuffle", "Toggle"] }
+    { "icon": "", "exec": ["playerctl", "-p", "spotify", "shuffle", "Toggle"] }
   ],
-
   "firefox-esr": [
     { "icon": "󰝜", "keys": "CTRL,T" },
     { "icon": "󰭌", "keys": "CTRL,W" },
     { "icon": "󰃀", "keys": "CTRL,D" },
     { "icon": "󰑓", "keys": "CTRL,R" }
   ],
-
   "com.microsoft.vscode": [
-    { "icon": "", "keys": "CTRL,P" },
+    { "icon": "", "keys": "CTRL,P" },
     { "icon": "󰆍", "keys": "CTRL SHIFT,0" },
     { "icon": "󰞷", "keys": "CTRL SHIFT,P" },
     { "icon": "󱂪", "keys": "CTRL,B" }
   ],
-
   "org.gnome.nautilus": [
     { "icon": "󰉗", "keys": "CTRL SHIFT,N" },
     { "icon": "󱞊", "keys": "CTRL,H" },
     { "icon": "󱧪", "keys": "ALT,Up" },
     { "icon": "󰥨", "keys": "CTRL,L" }
   ],
-
   "kitty": [
     { "icon": "󰝜", "keys": "CTRL SHIFT,T" },
     { "icon": "󰭋", "keys": "CTRL SHIFT,Q" },
     { "icon": "󰆏", "keys": "CTRL SHIFT,C" },
     { "icon": "󰆒", "keys": "CTRL SHIFT,V" }
   ],
-
   "gimp": [
     { "icon": "󰃣", "keys": ",P" },
     { "icon": "󰏫", "keys": ",N" },
@@ -52,9 +41,9 @@
     { "icon": "󰆏", "keys": ",C" }
   ],
   "org.telegram.desktop": [
-    { "icon": "", "keys": "CTRL SHIFT,Tab" },
-    { "icon": "", "keys": "CTRL,Tab" },
+    { "icon": "", "keys": "CTRL SHIFT,Tab" },
+    { "icon": "", "keys": "CTRL,Tab" },
     { "icon": "󰭹", "keys": "CTRL,K" },
-    { "icon": "", "keys": "CTRL,F" }
+    { "icon": "", "keys": "CTRL,F" }
   ]
 }
