@@ -179,12 +179,12 @@ install_hyprland() {
 
 EOF
     read -r -p "Press Enter to start Debian-Hyprland... " _
-    (cd "$dir" && ./install.sh --mode source --preset snowflake-preset.sh) </dev/tty >/dev/tty 2>/dev/tty
+    (cd "$dir" && LC_ALL=C.UTF-8 LANG=C.UTF-8 LANGUAGE= ./install.sh --mode source --preset snowflake-preset.sh) </dev/tty >/dev/tty 2>/dev/tty
 
     command -v Hyprland >/dev/null || die "Hyprland was not installed, see Debian-Hyprland logs in $dir/Install-Logs"
     ok "$(Hyprland --version | head -1)"
 
-    if [[ -x /usr/local/bin/hyprlock ]] && apt-cache policy hyprlock | grep -q 'Candidate: [0-9]'; then
+    if [[ -x /usr/local/bin/hyprlock ]] && LC_ALL=C apt-cache policy hyprlock | grep -q 'Candidate: [0-9]'; then
         sudo mv -f /usr/local/bin/hyprlock /usr/local/bin/hyprlock.disabled
         apt_install hyprlock
         ok "hyprlock from apt, source build kept as hyprlock.disabled"
