@@ -1,0 +1,6 @@
+@define-color bg_panel_waybar {{theme.bg_panel_waybar.hex}};
+@define-color text_waybar {{theme.text_waybar.hex}};
+@define-color workspace_active {{theme.workspace_active.hex}};
+@define-color hover_light {{theme.hover_light.hex}};
+@define-color accent_secondary {{theme.accent_secondary.hex}};
+@define-color clock_glow {{theme.clock_glow.hex}};

@@ -1,0 +1,12 @@
+{
+  "bg_panel": "{{theme.bg_panel_battery.hex}}",
+  "border_panel": "{{theme.accent_primary.hex}}",
+  "surface": "{{theme.bg_input_wofi.hex}}",
+  "item_hover": "{{theme.bg_track.hex}}",
+  "accent_primary": "{{theme.accent_primary.hex}}",
+  "chip_active_bg": "{{theme.accent_secondary.hex}}",
+  "chip_active_text": "{{theme.accent_primary.hex}}",
+  "selection": "{{theme.accent_secondary.hex}}",
+  "text_main": "{{theme.text_main.hex}}",
+  "text_dim": "{{theme.text_dim.hex}}"
+}

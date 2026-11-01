@@ -1,0 +1,17 @@
+{
+  "accent_primary": "{{theme.accent_primary.hex}}",
+  "accent_secondary": "{{theme.accent_secondary.hex}}",
+  "bg_panel_waybar": "{{theme.bg_panel_waybar.hex}}",
+  "bg_panel_battery": "{{theme.bg_panel_battery.hex}}",
+  "bg_track": "{{theme.bg_track.hex}}",
+  "bg_input_wofi": "{{theme.bg_input_wofi.hex}}",
+  "text_main": "{{theme.text_main.hex}}",
+  "text_dim": "{{theme.text_dim.hex}}",
+  "text_waybar": "{{theme.text_waybar.hex}}",
+  "workspace_active": "{{theme.workspace_active.hex}}",
+  "hover_light": "{{theme.hover_light.hex}}",
+  "hover_wofi_select": "{{theme.hover_wofi_select.hex}}",
+  "wofi_input_text": "{{theme.wofi_input_text.hex}}",
+  "wofi_accent_text": "{{theme.wofi_accent_text.hex}}",
+  "clock_glow": "{{theme.clock_glow.hex}}"
+}
