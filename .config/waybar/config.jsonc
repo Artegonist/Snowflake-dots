@@ -35,7 +35,7 @@
     "custom/petbutton": {
         "format": "",
         "tooltip": false,
-        "on-click": "qs -c pet-habitat ipc call petModule toggle"
+        "on-click": "qs -c snowflake ipc call petModule toggle"
     },
     "custom/layout": {
         "exec": "~/.config/hypr/scripts/toggle_layout.sh show",
@@ -64,7 +64,7 @@
         "exec": "~/.config/waybar/scripts/playbutton.sh",
         "return-type": "json",
         "on-click": "~/.config/waybar/scripts/playbutton.sh toggle",
-        "on-click-right": "qs -c player-module ipc call player toggle",
+        "on-click-right": "qs -c snowflake ipc call player toggle",
         "signal": 8,
         "interval": 3,
         "tooltip": false
@@ -72,20 +72,20 @@
     "custom/prevbutton": {
         "format": "󰒮",
         "on-click": "~/.config/waybar/scripts/playbutton.sh previous",
-        "on-click-right": "qs -c player-module ipc call player toggle",
+        "on-click-right": "qs -c snowflake ipc call player toggle",
         "tooltip": false
     },
     "custom/nextbutton": {
         "format": "󰒭",
         "on-click": "~/.config/waybar/scripts/playbutton.sh next",
-        "on-click-right": "qs -c player-module ipc call player toggle",
+        "on-click-right": "qs -c snowflake ipc call player toggle",
         "tooltip": false
     },
     
     "clock": {
         "format": "{:%H:%M:%S}",
         "interval": 1,
-        "on-click": "qs -c hub-module ipc call hub toggle",
+        "on-click": "qs -c snowflake ipc call hub toggle",
         "tooltip": false
     },	
     "pulseaudio": {
@@ -94,9 +94,9 @@
         "format-icons": {
             "default": ["󰕿", "󰖀", "󰕾"]
         },
-        "on-click": "qs -c audio-module ipc call audio toggle",
-        "on-scroll-up": "qs -c osd-module ipc call osd incVolume -1",
-        "on-scroll-down": "qs -c osd-module ipc call osd incVolume 1",
+        "on-click": "qs -c snowflake ipc call audio toggle",
+        "on-scroll-up": "qs -c snowflake ipc call osd incVolume -1",
+        "on-scroll-down": "qs -c snowflake ipc call osd incVolume 1",
         "smooth-scrolling-threshold": 1,
         "tooltip": false,
         "min-length": 6,
@@ -116,12 +116,12 @@
     },
     "custom/power": {
         "format":  "",
-        "on-click": "qs -c power-menu ipc call powermenu toggle",
+        "on-click": "qs -c snowflake ipc call powermenu toggle",
         "tooltip": false
     },
     "network": {
         "format": "{icon}",
-        "on-click": "qs -c wifi-panel ipc call wifi toggle",
+        "on-click": "qs -c snowflake ipc call wifi toggle",
         "format-wifi": "{icon} {essid}",
         "format-ethernet": "󰈀",
         "format-disconnected": "󰤭",
@@ -137,7 +137,7 @@
         "format-off": " 󰂲 ",
         "format-on": " 󰂯 ",
         "format-connected": " 󰂱 ",
-        "on-click": "qs -c bluetooth-panel ipc call bluetooth toggle",
+        "on-click": "qs -c snowflake ipc call bluetooth toggle",
         "interval": 1,
         "tooltip": false
     },
@@ -172,14 +172,14 @@
     "memory": {
     	"interval": 5,
         "tooltip": false,
-        "on-click": "qs -c system-info ipc call sysinfo toggle",
+        "on-click": "qs -c snowflake ipc call sysinfo toggle",
     	"format": "{icon} {percentage}%",
     	"format-icons":[""]
     },
     "cpu": {
     	"interval": 5,
         "tooltip": false,
-        "on-click": "qs -c system-info ipc call sysinfo toggle",
+        "on-click": "qs -c snowflake ipc call sysinfo toggle",
         "format": "{icon} {usage}%",
         "format-icons":[""]
     },
@@ -188,14 +188,14 @@
         "tooltip": false,
         "hwmon-path-abs": "/sys/devices/platform/coretemp.0/hwmon",
         "input-filename": "temp1_input",
-        "on-click": "qs -c system-info ipc call sysinfo toggle",
+        "on-click": "qs -c snowflake ipc call sysinfo toggle",
         "format": "{icon} {temperatureC}°",
         "format-icons": ["","","",""]
     },
     "custom/battery": {
         "exec": "~/.config/waybar/scripts/battery-watch.sh",
         "return-type": "json",
-        "on-click": "qs -c battery-panel ipc call batteryPanel toggle",
+        "on-click": "qs -c snowflake ipc call batteryPanel toggle",
         "restart-interval": 5,
         "tooltip": false
     }
