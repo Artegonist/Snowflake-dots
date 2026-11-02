@@ -404,6 +404,11 @@ post_deploy() {
     for d in "$HOME/.config/hypr/scripts" "$HOME/.config/waybar/scripts" "$HOME/.config/quickshell/snowflake"; do
         [[ -d "$d" ]] && find "$d" -type f -name '*.sh' -exec chmod +x {} +
     done
+    [[ -f "$HOME/.local/bin/snowflake" ]] && chmod +x "$HOME/.local/bin/snowflake"
+    case ":$PATH:" in
+        *":$HOME/.local/bin:"*) ;;
+        *) info "~/.local/bin is added to PATH at the next login, until then run: ~/.local/bin/snowflake" ;;
+    esac
 
     mkdir -p "$HOME/.config/quickshell/clipboard-module"
     mkdir -p "$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/screenshots"
@@ -443,9 +448,21 @@ apply_theme() {
     ok "Colors generated"
 }
 
+check_libraries() {
+    local bin missing
+    sudo ldconfig
+    for bin in /usr/local/bin/waybar /usr/local/bin/quickshell; do
+        [[ -x "$bin" ]] || continue
+        missing="$(ldd "$bin" 2>/dev/null | awk '/not found/ {print $1}' | tr '\n' ' ')"
+        [[ -z "$missing" ]] || warn "$bin is missing libraries: $missing"
+    done
+    return 0
+}
+
 enable_services() {
     step "Services"
     local unit
+    check_libraries
     for unit in bluetooth.service NetworkManager.service power-profiles-daemon.service upower.service; do
         sudo systemctl enable --now "$unit" 2>/dev/null || warn "Could not enable $unit"
     done
