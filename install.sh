@@ -155,9 +155,17 @@ ensure_deb_src() {
 }
 
 # ------------------------- PACKAGES -------------------------
+disable_yazi_repo() {
+    local f=/etc/apt/sources.list.d/yazi.list
+    [[ -f "$f" ]] || return 0
+    sudo mv -f "$f" "$f.disabled"
+    info "Disabled the yazi APT repository added by Debian-Hyprland (unsigned, not needed by Snowflake)"
+}
+
 install_packages() {
     step "Installing packages"
-    sudo apt-get update
+    disable_yazi_repo
+    sudo apt-get update || warn "apt update reported errors (often a broken third-party repository), continuing with the package lists that loaded"
     apt_install "${RUNTIME_PKGS[@]}"
     (( DOTS_ONLY )) || apt_install "${BUILD_PKGS[@]}"
 }
@@ -180,6 +188,9 @@ install_hyprland() {
 EOF
     read -r -p "Press Enter to start Debian-Hyprland... " _
     (cd "$dir" && LC_ALL=C.UTF-8 LANG=C.UTF-8 LANGUAGE= ./install.sh --mode source --preset snowflake-preset.sh) </dev/tty >/dev/tty 2>/dev/tty
+
+    disable_yazi_repo
+    sudo apt-get update || warn "apt update reported errors"
 
     command -v Hyprland >/dev/null || die "Hyprland was not installed, see Debian-Hyprland logs in $dir/Install-Logs"
     ok "$(Hyprland --version | head -1)"
@@ -249,10 +260,11 @@ install_quickshell() {
 
 # ------------------------- WAYBAR -------------------------
 install_waybar() {
-    step "Waybar 0.15.0 with the Snowflake Hyprland IPC patch"
+    step "Waybar 0.15.0 with the Snowflake patches"
     local dir="$BUILD_DIR/Waybar"
     fetch_git "$WAYBAR_REPO" "$dir" "$WAYBAR_REV"
     apply_patch "$dir" waybar-hyprland-legacy-ipc.patch
+    apply_patch "$dir" waybar-taskbar-squash-fix.patch
     grep -q 'FORCE: this Hyprland build lacks real hl.dsp Lua support' "$dir/src/modules/hyprland/backend.cpp" \
         || die "Waybar patch is not in place, refusing to build an unpatched Waybar"
 
@@ -425,13 +437,18 @@ enable_services() {
     for unit in pipewire.socket pipewire-pulse.socket wireplumber.service swaync.service; do
         systemctl --user enable "$unit" 2>/dev/null || warn "Could not enable user $unit"
     done
+    if systemctl --user is-enabled waybar.service >/dev/null 2>&1; then
+        systemctl --user disable --now waybar.service 2>/dev/null || true
+        info "Disabled waybar.service from the Debian package, Hyprland starts the patched Waybar itself"
+    fi
     ok "Services enabled"
 }
 
 # ------------------------- CHECK -------------------------
 verify() {
     step "Checking the result"
-    local cmd fail=0
+    local cmd fail=0 fonts
+    fonts="$(fc-list : family)"
     for cmd in Hyprland hyprctl uwsm hypridle hyprlock qs waybar wofi matugen hyprshot swaybg cliphist kitty fastfetch nmcli; do
         if command -v "$cmd" >/dev/null; then
             ok "$cmd → $(command -v "$cmd")"
@@ -443,8 +460,8 @@ verify() {
     grep -q 'FORCE: this Hyprland build' "$BUILD_DIR/Waybar/src/modules/hyprland/backend.cpp" 2>/dev/null \
         && ok "Waybar was built with the Snowflake patch" \
         || { (( DOTS_ONLY )) || { warn "Waybar patch not confirmed"; fail=1; }; }
-    fc-list | grep -q 'JetBrainsMono Nerd Font' && ok "JetBrainsMono Nerd Font" || { warn "JetBrainsMono Nerd Font missing"; fail=1; }
-    fc-list | grep -q 'Symbols Nerd Font' && ok "Symbols Nerd Font" || { warn "Symbols Nerd Font missing"; fail=1; }
+    grep -q 'JetBrainsMono Nerd Font' <<<"$fonts" && ok "JetBrainsMono Nerd Font" || { warn "JetBrainsMono Nerd Font missing"; fail=1; }
+    grep -q 'Symbols Nerd Font' <<<"$fonts" && ok "Symbols Nerd Font" || { warn "Symbols Nerd Font missing"; fail=1; }
     return "$fail"
 }
 
