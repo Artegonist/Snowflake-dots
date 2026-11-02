@@ -19,6 +19,8 @@ Usage: ${0##*/} [options]
   --check        only show which new commits are on GitHub, change nothing
   --dry-run      show what update would do with your files, change nothing
   --no-build     update configs only, do not rebuild Quickshell / Waybar / tools
+  --yes          do not ask before --reset
+  --full-log     show the full build output instead of progress lines
   -h, --help     show this help
 EOF
 }
@@ -230,32 +232,6 @@ regenerate_colors() {
 }
 
 # ------------------------- BUILD -------------------------
-rebuild_changed() {
-    step "Rebuilding what changed"
-    local name now was any=0
-    for name in "${COMPONENTS[@]}"; do
-        now="$(fingerprint "$name")"
-        was="$(installed_fingerprint "$name")"
-        [[ "$now" == "$was" ]] && continue
-        any=1
-        case "$name" in
-            hyprland)
-                if [[ -n "$was" ]]; then
-                    warn "The Hyprland part of Snowflake changed. It is rebuilt only by: bash install.sh"
-                else
-                    record_component hyprland
-                fi
-                ;;
-            quickshell) install_quickshell; record_component quickshell ;;
-            waybar)     install_waybar; record_component waybar ;;
-            wofi)       install_wofi; record_component wofi ;;
-            hyprshot)   install_hyprshot; record_component hyprshot ;;
-            matugen)    install_matugen; record_component matugen ;;
-        esac
-    done
-    (( any )) || ok "Nothing to rebuild"
-}
-
 # ------------------------- RESTART -------------------------
 restart_session_parts() {
     step "Applying"
@@ -279,6 +255,8 @@ while (( $# )); do
         --check) MODE="check" ;;
         --dry-run) MODE="dry" ;;
         --no-build) NO_BUILD=1 ;;
+        --yes) UI_YES=1 ;;
+        --verbose | --full-log) UI_VERBOSE=1 ;;
         --pulled) PULLED=1 ;;
         -h | --help) usage; exit 0 ;;
         *) usage; die "Unknown option: $1" ;;
@@ -286,42 +264,94 @@ while (( $# )); do
     shift
 done
 
+if [[ -t 1 ]]; then UI_TTY=1; fi
+ui_colors
+
 if [[ "$MODE" == check ]]; then
+    ui_banner "Snowflake update" "Checking GitHub for a new version" nologo
     check_only
     exit 0
 fi
 
 if [[ "$MODE" == dry ]]; then
+    ui_banner "Snowflake update" "Dry run, nothing will be changed" nologo
     plan_dots
     exit 0
 fi
 
 if (( ! PULLED )); then
+    ui_banner "Snowflake update" "Simply beautiful · keeps your own changes" nologo
     pull_repo
     args=(--pulled)
     if [[ "$MODE" == reset ]]; then args+=(--reset); fi
     if (( NO_BUILD )); then args+=(--no-build); fi
+    if (( UI_YES )); then args+=(--yes); fi
+    if (( UI_VERBOSE )); then args+=(--verbose); fi
     exec bash "$REPO_DIR/update.sh" "${args[@]}"
 fi
 
-mkdir -p "$BUILD_DIR"
-LOG="$BUILD_DIR/update-$(date +%F-%H%M%S).log"
-exec > >(tee -a "$LOG") 2>&1
-
 (( EUID != 0 )) || die "Run as your normal user, not root."
-sudo -v
-install_packages
+mkdir -p "$BUILD_DIR"
+ui_start "$BUILD_DIR/update-$(date +%F-%H%M%S).log"
+
+CHANGED=()
+HYPRLAND_CHANGED=0
+for name in "${COMPONENTS[@]}"; do
+    now="$(fingerprint "$name")"
+    was="$(installed_fingerprint "$name")"
+    [[ "$now" == "$was" ]] && continue
+    if [[ "$name" == hyprland ]]; then
+        if [[ -n "$was" ]]; then HYPRLAND_CHANGED=1; else record_component hyprland; fi
+        continue
+    fi
+    CHANGED+=("$name")
+done
+
+printf '\n'
+if [[ "$MODE" == reset ]]; then
+    ui_summary_row "Mode" "reset all configs to the Snowflake defaults (backup is kept)"
+else
+    ui_summary_row "Mode" "update, your own changes are kept"
+fi
+if (( NO_BUILD )); then
+    ui_summary_row "Rebuild" "skipped (--no-build)"
+elif (( ${#CHANGED[@]} )); then
+    ui_summary_row "Rebuild" "${CHANGED[*]}"
+else
+    ui_summary_row "Rebuild" "nothing changed"
+fi
+ui_summary_row "Log" "$LOG"
+if [[ "$MODE" == reset ]] && ! ui_confirm; then
+    info "Cancelled, nothing was changed."
+    exit 0
+fi
+printf '\n'
+ui_sudo_keepalive
+
+phase_add quiet "System packages" install_packages
 if (( ! NO_BUILD )); then
-    rebuild_changed
+    for name in "${CHANGED[@]}"; do
+        case "$name" in
+            quickshell) phase_add quiet "Quickshell 0.3.0" p_quickshell ;;
+            waybar)     phase_add quiet "Waybar 0.15.0 + Snowflake patches" p_waybar ;;
+            wofi)       phase_add quiet "wofi" p_wofi ;;
+            hyprshot)   phase_add quiet "hyprshot" p_hyprshot ;;
+            matugen)    phase_add quiet "matugen $MATUGEN_VERSION" p_matugen ;;
+        esac
+    done
 fi
 if [[ "$MODE" == reset ]]; then
-    reset_dots
+    phase_add shown "Configs, reset to defaults" reset_dots
 else
-    merge_dots
+    phase_add shown "Configs, merged with your changes" merge_dots
 fi
-regenerate_colors
-enable_services
-restart_session_parts
+phase_add quiet "Colors" regenerate_colors
+phase_add shown "Services" enable_services
+phase_add shown "Apply" restart_session_parts
+phase_run_all
 
-printf '\n\033[1;32mSnowflake is updated.\033[0m\n'
-printf 'Log: %s\n' "$LOG"
+printf '\n  %s%s❄  Snowflake is updated%s  %sin %s%s\n' "$C_BOLD" "$C_ICE" "$C_RESET" "$C_DIM" "$(ui_total_time)" "$C_RESET"
+if (( HYPRLAND_CHANGED )); then
+    printf '     %s!%s  The Hyprland part changed, update it with: %sbash install.sh%s\n' "$C_WARN" "$C_RESET" "$C_BOLD" "$C_RESET"
+fi
+printf '     %sLog: %s%s\n\n' "$C_DIM" "$LOG" "$C_RESET"

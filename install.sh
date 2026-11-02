@@ -67,11 +67,7 @@ BUILD_PKGS=(
 )
 
 # ------------------------- OUTPUT -------------------------
-info() { printf '\033[1;36m::\033[0m %s\n' "$*"; }
-ok()   { printf '\033[1;32m✓\033[0m  %s\n' "$*"; }
-warn() { printf '\033[1;33m!\033[0m  %s\n' "$*" >&2; }
-die()  { printf '\033[1;31m✗\033[0m  %s\n' "$*" >&2; exit 1; }
-step() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
+source "$REPO_DIR/installer/ui.sh"
 
 trap 'die "Failed at line $LINENO: $BASH_COMMAND (log: $LOG)"' ERR
 
@@ -88,6 +84,8 @@ Usage: ${0##*/} [options]
   --theme NAME       default theme from .config/matugen/themes (default: $THEME)
   --skip-hyprland    do not run Debian-Hyprland (Hyprland is already installed)
   --dots-only        only copy configs, fonts and themes, build nothing
+  --yes              do not ask for confirmation before starting
+  --full-log         show the full build output instead of progress lines
   -h, --help         show this help
 EOF
 }
@@ -103,7 +101,7 @@ apt_install() {
         fi
     done
     (( ${#missing[@]} )) && warn "Not found in apt, skipped: ${missing[*]}"
-    (( ${#available[@]} )) && sudo apt-get install -y "${available[@]}"
+    (( ${#available[@]} )) && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${available[@]}"
     return 0
 }
 
@@ -138,8 +136,7 @@ preflight() {
         ask "Continue anyway?" || exit 1
     fi
 
-    sudo -v
-    ok "Debian 13, user $(id -un)"
+    ok "Debian ${VERSION_ID:-?}, user $(id -un)"
 }
 
 ensure_deb_src() {
@@ -169,7 +166,7 @@ disable_yazi_repo() {
 install_packages() {
     step "Installing packages"
     disable_yazi_repo
-    sudo apt-get update || warn "apt update reported errors (often a broken third-party repository), continuing with the package lists that loaded"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update || warn "apt update reported errors (often a broken third-party repository), continuing with the package lists that loaded"
     apt_install "${RUNTIME_PKGS[@]}"
     (( DOTS_ONLY )) || apt_install "${BUILD_PKGS[@]}"
 }
@@ -195,7 +192,7 @@ EOF
     (cd "$dir" && LC_ALL=C.UTF-8 LANG=C.UTF-8 LANGUAGE= ./install.sh --mode source --preset snowflake-preset.sh) </dev/tty >/dev/tty 2>/dev/tty
 
     disable_yazi_repo
-    sudo apt-get update || warn "apt update reported errors"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update || warn "apt update reported errors"
 
     command -v Hyprland >/dev/null || die "Hyprland was not installed, see Debian-Hyprland logs in $dir/Install-Logs"
     ok "$(Hyprland --version | head -1)"
@@ -500,24 +497,43 @@ record_component() {
 
 # ------------------------- CHECK -------------------------
 verify() {
-    step "Checking the result"
-    local cmd fail=0 fonts
+    local cmd fail=0 fonts path
     fonts="$(fc-list : family)"
+    printf '\n  %sResult%s\n' "$C_BOLD" "$C_RESET"
     for cmd in Hyprland hyprctl uwsm hypridle hyprlock qs waybar wofi matugen hyprshot swaybg cliphist kitty fastfetch nmcli; do
-        if command -v "$cmd" >/dev/null; then
-            ok "$cmd → $(command -v "$cmd")"
+        if path="$(command -v "$cmd")"; then
+            printf '  %s✓%s  %-12s %s%s%s\n' "$C_OK" "$C_RESET" "$cmd" "$C_DIM" "$path" "$C_RESET"
         else
-            warn "$cmd is missing"
+            printf '  %s✗%s  %-12s %smissing%s\n' "$C_ERR" "$C_RESET" "$cmd" "$C_ERR" "$C_RESET"
             fail=1
         fi
     done
-    grep -q 'FORCE: this Hyprland build' "$BUILD_DIR/Waybar/src/modules/hyprland/backend.cpp" 2>/dev/null \
-        && ok "Waybar was built with the Snowflake patch" \
-        || { (( DOTS_ONLY )) || { warn "Waybar patch not confirmed"; fail=1; }; }
-    grep -q 'JetBrainsMono Nerd Font' <<<"$fonts" && ok "JetBrainsMono Nerd Font" || { warn "JetBrainsMono Nerd Font missing"; fail=1; }
-    grep -q 'Symbols Nerd Font' <<<"$fonts" && ok "Symbols Nerd Font" || { warn "Symbols Nerd Font missing"; fail=1; }
+    if (( ! DOTS_ONLY )); then
+        if grep -q 'FORCE: this Hyprland build' "$BUILD_DIR/Waybar/src/modules/hyprland/backend.cpp" 2>/dev/null; then
+            printf '  %s✓%s  %-12s %sbuilt with the Snowflake patches%s\n' "$C_OK" "$C_RESET" "Waybar" "$C_DIM" "$C_RESET"
+        else
+            printf '  %s✗%s  %-12s %sSnowflake patch not confirmed%s\n' "$C_ERR" "$C_RESET" "Waybar" "$C_ERR" "$C_RESET"
+            fail=1
+        fi
+    fi
+    for path in "JetBrainsMono Nerd Font" "Symbols Nerd Font"; do
+        if grep -q "$path" <<<"$fonts"; then
+            printf '  %s✓%s  %s\n' "$C_OK" "$C_RESET" "$path"
+        else
+            printf '  %s✗%s  %s %smissing%s\n' "$C_ERR" "$C_RESET" "$path" "$C_ERR" "$C_RESET"
+            fail=1
+        fi
+    done
     return "$fail"
 }
+
+# ------------------------- PHASES -------------------------
+p_hyprland()   { install_hyprland; if (( ! SKIP_HYPRLAND )); then record_component hyprland; fi; }
+p_quickshell() { install_quickshell; record_component quickshell; }
+p_waybar()     { install_waybar; record_component waybar; }
+p_wofi()       { install_wofi; record_component wofi; }
+p_hyprshot()   { install_hyprshot; record_component hyprshot; }
+p_matugen()    { install_matugen; record_component matugen; }
 
 # ------------------------- MAIN -------------------------
 main() {
@@ -526,6 +542,8 @@ while (( $# )); do
         --theme) THEME="${2:?--theme needs a name}"; shift ;;
         --skip-hyprland) SKIP_HYPRLAND=1 ;;
         --dots-only) DOTS_ONLY=1; SKIP_HYPRLAND=1 ;;
+        --yes) UI_YES=1 ;;
+        --verbose | --full-log) UI_VERBOSE=1 ;;
         -h | --help) usage; exit 0 ;;
         *) usage; die "Unknown option: $1" ;;
     esac
@@ -533,38 +551,64 @@ while (( $# )); do
 done
 
 mkdir -p "$BUILD_DIR"
-LOG="$BUILD_DIR/install-$(date +%F-%H%M%S).log"
-exec > >(tee -a "$LOG") 2>&1
+ui_start "$BUILD_DIR/install-$(date +%F-%H%M%S).log"
 
-preflight
-ensure_deb_src
-install_packages
-if (( ! DOTS_ONLY )); then
-    install_hyprland
-    if (( ! SKIP_HYPRLAND )); then record_component hyprland; fi
-    install_quickshell; record_component quickshell
-    install_waybar; record_component waybar
-    install_wofi; record_component wofi
-    install_hyprshot; record_component hyprshot
+ui_banner "Snowflake installer" "Simply beautiful · Hyprland rice for Debian 13"
+if (( DOTS_ONLY )); then
+    ui_summary_row "Mode" "configs, fonts and theme only (--dots-only)"
+elif (( SKIP_HYPRLAND )); then
+    ui_summary_row "Will build" "Quickshell 0.3.0 · Waybar 0.15.0 (patched) · wofi · hyprshot"
+    ui_summary_row "Hyprland" "skipped (--skip-hyprland)"
+else
+    ui_summary_row "Will build" "Hyprland 0.55.3 · Quickshell 0.3.0 · Waybar 0.15.0 (patched) · wofi · hyprshot"
 fi
+ui_summary_row "Theme" "$THEME"
 if (( ! DOTS_ONLY )); then
-    ensure_uwsm_session
-    use_apt_hyprlock
+    if (( SKIP_HYPRLAND )); then
+        ui_summary_row "Time" "about 20–40 minutes, mostly compiling"
+    else
+        ui_summary_row "Time" "about 1–2 hours, mostly compiling"
+    fi
 fi
-install_matugen; record_component matugen
-install_fonts
-install_themes
-deploy_dots
-fix_temperature_sensor
-apply_theme
-enable_services
+ui_summary_row "Log" "$LOG"
+if ! ui_confirm; then
+    info "Cancelled, nothing was changed."
+    exit 0
+fi
+printf '\n'
+ui_sudo_keepalive
+
+phase_add shown "System check" preflight
+phase_add shown "APT sources" ensure_deb_src
+phase_add quiet "System packages" install_packages
+if (( ! DOTS_ONLY )); then
+    if (( ! SKIP_HYPRLAND )); then
+        phase_add shown "Hyprland 0.55.3 (Debian-Hyprland)" p_hyprland
+    fi
+    phase_add quiet "Quickshell 0.3.0" p_quickshell
+    phase_add quiet "Waybar 0.15.0 + Snowflake patches" p_waybar
+    phase_add quiet "wofi" p_wofi
+    phase_add quiet "hyprshot" p_hyprshot
+    phase_add shown "Login session (uwsm)" ensure_uwsm_session
+    phase_add quiet "hyprlock" use_apt_hyprlock
+fi
+phase_add quiet "matugen $MATUGEN_VERSION" p_matugen
+phase_add quiet "Nerd Fonts" install_fonts
+phase_add quiet "GTK, icons and cursor" install_themes
+phase_add shown "Snowflake configs" deploy_dots
+phase_add shown "Temperature sensor" fix_temperature_sensor
+phase_add quiet "Theme $THEME" apply_theme
+phase_add shown "Services" enable_services
+phase_run_all
 
 if verify; then
-    printf '\n\033[1;32mSnowflake is installed.\033[0m Reboot and choose the Hyprland (uwsm) session at login.\n'
+    printf '\n  %s%s❄  Snowflake is installed%s  %sin %s%s\n' "$C_BOLD" "$C_ICE" "$C_RESET" "$C_DIM" "$(ui_total_time)" "$C_RESET"
+    printf '     Reboot, then on the login screen pick %sHyprland (uwsm-managed)%s.\n' "$C_BOLD" "$C_RESET"
 else
-    printf '\n\033[1;33mSnowflake is installed with warnings, see above and %s\033[0m\n' "$LOG"
+    printf '\n  %s%s!  Snowflake is installed with warnings%s  %sin %s%s\n' "$C_BOLD" "$C_WARN" "$C_RESET" "$C_DIM" "$(ui_total_time)" "$C_RESET"
+    printf '     See the list above.\n'
 fi
-printf 'Log: %s\n' "$LOG"
+printf '     %sLog: %s%s\n\n' "$C_DIM" "$LOG" "$C_RESET"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
