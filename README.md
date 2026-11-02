@@ -50,6 +50,9 @@ su -
 ```bash
 usermod -aG sudo "your user"
 ```
+```bash
+exit
+```
 Then reboot your system
 
 Update the system, install git and reboot:
