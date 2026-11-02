@@ -1,18 +1,18 @@
 # SNOWFLAKE-DOTFILES
 
-![Snowflake desktop](assets/desktop.png)
+![Snowflake desktop](Rice%20demo/snowflake-103646.png)
 
 <table>
   <tr>
-    <td><img src="assets/demo-1.png" alt="Snowflake demo 1"></td>
-    <td><img src="assets/demo-2.png" alt="Snowflake demo 2"></td>
+    <td><img src="Rice%20demo/snowflake-104245.png" alt="Snowflake demo 1"></td>
+    <td><img src="Rice%20demo/snowflake-104417.png" alt="Snowflake demo 2"></td>
   </tr>
   <tr>
-    <td><img src="assets/demo-3.png" alt="Snowflake demo 3"></td>
-    <td><img src="assets/demo-4.png" alt="Snowflake demo 4"></td>
+    <td><img src="Rice%20demo/snowflake-104728.png" alt="Snowflake demo 3"></td>
+    <td><img src="Rice%20demo/snowflake-104934.png" alt="Snowflake demo 4"></td>
   </tr>
   <tr>
-    <td colspan="2"><img src="assets/demo-5.png" alt="Snowflake demo 5"></td>
+    <td colspan="2"><img src="Rice%20demo/snowflake-105018.png" alt="Snowflake demo 5"></td>
   </tr>
 </table>
 
