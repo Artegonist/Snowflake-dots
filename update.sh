@@ -55,6 +55,23 @@ check_only() {
 }
 
 # ------------------------- CONFIGS -------------------------
+GENERATED_FILES=(
+    .config/hypr/colors.conf
+    .config/waybar/colors.css
+    .config/wofi/colors.css
+    .config/quickshell/snowflake/colors.json
+    .config/quickshell/clipboard-module/colors.json
+)
+
+is_generated() {
+    local g
+    for g in "${GENERATED_FILES[@]}"; do [[ "$1" == "$g" ]] && return 0; done
+    return 1
+}
+
+same_content() {
+    cmp -s <(sed -e '$a\' "$1") <(sed -e '$a\' "$2")
+}
 merge_dots() {
     step "Updating configs, keeping your changes"
     local backup="$HOME/.snowflake-backup/$(date +%F-%H%M%S)" src rel dst base tmp
@@ -71,10 +88,10 @@ merge_dots() {
             updated=$((updated + 1))
             continue
         fi
-        if [[ "$rel" == .local/share/* ]]; then
+        if [[ "$rel" == .local/share/* ]] || is_generated "$rel"; then
             continue
         fi
-        if cmp -s "$src" "$dst"; then
+        if same_content "$src" "$dst"; then
             install -Dm644 "$src" "$base"
             continue
         fi
@@ -84,13 +101,13 @@ merge_dots() {
             unknown+=("$rel")
             continue
         fi
-        if cmp -s "$dst" "$base"; then
+        if same_content "$dst" "$base"; then
             install -Dm644 "$src" "$dst"
             install -Dm644 "$src" "$base"
             updated=$((updated + 1))
             continue
         fi
-        if cmp -s "$src" "$base"; then
+        if same_content "$src" "$base"; then
             kept=$((kept + 1))
             continue
         fi
@@ -148,10 +165,11 @@ plan_dots() {
         base="$BASE_DIR/$rel"
         if [[ ! -e "$dst" ]]; then new+=("$rel"); continue; fi
         [[ "$rel" == .local/share/* ]] && continue
-        cmp -s "$src" "$dst" && continue
+        is_generated "$rel" && continue
+        same_content "$src" "$dst" && continue
         if [[ ! -f "$base" ]]; then unknown+=("$rel"); continue; fi
-        if cmp -s "$dst" "$base"; then replace+=("$rel"); continue; fi
-        if cmp -s "$src" "$base"; then keep+=("$rel"); continue; fi
+        if same_content "$dst" "$base"; then replace+=("$rel"); continue; fi
+        if same_content "$src" "$base"; then keep+=("$rel"); continue; fi
         if git merge-file -p -q "$dst" "$base" "$src" >/dev/null 2>&1; then
             merge+=("$rel")
         else
