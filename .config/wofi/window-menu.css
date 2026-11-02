@@ -22,13 +22,13 @@ window {
 }
 
 #outer-box {
-    margin: 5px;
+    margin: 0;
     background-color: transparent;
     border-radius: 8px;
 }
 
 #scroll {
-    margin: 5px;
+    margin: 10px;
     border-radius: 8px;
 }
 
