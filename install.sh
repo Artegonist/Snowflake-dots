@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # ------------------------- CONFIG -------------------------
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SNOWFLAKE_BUILD_DIR:-$HOME/.cache/snowflake-build}"
-THEME="arctic"
+THEME="bloodsnow"
 SKIP_HYPRLAND=0
 DOTS_ONLY=0
 
@@ -25,9 +25,10 @@ HYPRSHOT_REV="f95068db7765b85a2bbae0f083e29074d7bee027"
 MATUGEN_VERSION="4.1.0"
 NERD_FONTS_VERSION="v3.4.0"
 FLAT_REMIX_ICONS_REPO="https://github.com/daniruiz/flat-remix.git"
-FLAT_REMIX_GTK_REPO="https://github.com/daniruiz/flat-remix-gtk.git"
-GTK_THEME="Flat-Remix-GTK-Blue-Dark"
-ICON_THEME="Flat-Remix-Blue-Dark"
+GTK_THEME="Adwaita"
+ICON_THEME="Adwaita"
+CURSOR_THEME="Flat-Remix-Blue-Dark"
+CURSOR_SIZE=24
 
 RUNTIME_PKGS=(
     git curl wget unzip jq socat python3 file
@@ -176,12 +177,13 @@ install_hyprland() {
     step "Hyprland 0.55.3 via Debian-Hyprland v3.2.3"
     local dir="$BUILD_DIR/Debian-Hyprland"
     fetch_git "$DH_REPO" "$dir" "$DH_REV"
+    apply_patch "$dir" debian-hyprland-preset-defaults.patch
     cp "$REPO_DIR/installer/debian-hyprland-preset.sh" "$dir/snowflake-preset.sh"
 
     cat <<'EOF'
 
   Debian-Hyprland opens its own menu now:
-    * keep the preselected options and confirm;
+    * only "bluetooth" should be checked, confirm with Tab + Enter;
     * when asked about KooL dotfiles, choose "Continue" (Snowflake has its own);
     * answer "n" when it offers to reboot at the end, the Snowflake install is not finished yet.
 
@@ -195,10 +197,16 @@ EOF
     command -v Hyprland >/dev/null || die "Hyprland was not installed, see Debian-Hyprland logs in $dir/Install-Logs"
     ok "$(Hyprland --version | head -1)"
 
-    if [[ -x /usr/local/bin/hyprlock ]] && LC_ALL=C apt-cache policy hyprlock | grep -q 'Candidate: [0-9]'; then
+}
+
+use_apt_hyprlock() {
+    LC_ALL=C apt-cache policy hyprlock | grep -q 'Candidate: [0-9]' || { warn "hyprlock is not in apt, keeping the current one"; return 0; }
+    apt_install hyprlock
+    if [[ -x /usr/local/bin/hyprlock ]]; then
         sudo mv -f /usr/local/bin/hyprlock /usr/local/bin/hyprlock.disabled
-        apt_install hyprlock
-        ok "hyprlock from apt, source build kept as hyprlock.disabled"
+        ok "hyprlock from apt, source build kept as /usr/local/bin/hyprlock.disabled"
+    else
+        ok "hyprlock from apt"
     fi
 }
 
@@ -342,30 +350,30 @@ install_fonts() {
 }
 
 install_themes() {
-    step "Flat Remix GTK and icon themes"
-    local dir="$BUILD_DIR/flat-remix"
-    if [[ ! -d "$HOME/.icons/$ICON_THEME" ]]; then
+    step "GTK, icons and cursor"
+    local dir="$BUILD_DIR/flat-remix" v
+    if [[ ! -d "$HOME/.icons/$CURSOR_THEME" ]]; then
         rm -rf "$dir"
         git clone --depth 1 --filter=blob:none --sparse "$FLAT_REMIX_ICONS_REPO" "$dir"
-        git -C "$dir" sparse-checkout set "$ICON_THEME"
+        git -C "$dir" sparse-checkout set "$CURSOR_THEME"
         mkdir -p "$HOME/.icons"
-        cp -a "$dir/$ICON_THEME" "$HOME/.icons/"
+        cp -a "$dir/$CURSOR_THEME" "$HOME/.icons/"
     fi
-    ok "$ICON_THEME"
-
-    dir="$BUILD_DIR/flat-remix-gtk"
-    if [[ ! -d "$HOME/.themes/$GTK_THEME" ]]; then
-        rm -rf "$dir"
-        git clone --depth 1 --filter=blob:none --sparse "$FLAT_REMIX_GTK_REPO" "$dir"
-        git -C "$dir" sparse-checkout set "themes/$GTK_THEME"
-        mkdir -p "$HOME/.themes"
-        cp -a "$dir/themes/$GTK_THEME" "$HOME/.themes/"
-    fi
-    ok "$GTK_THEME"
+    ok "$CURSOR_THEME"
 
     gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" || true
     gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" || true
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark || true
+    gsettings set org.gnome.desktop.interface cursor-theme "$CURSOR_THEME" || true
+    gsettings set org.gnome.desktop.interface cursor-size "$CURSOR_SIZE" || true
+
+    for v in gtk-3.0 gtk-4.0; do
+        mkdir -p "$HOME/.config/$v"
+        if [[ ! -f "$HOME/.config/$v/settings.ini" ]]; then
+            printf '[Settings]\ngtk-cursor-theme-name=%s\ngtk-cursor-theme-size=%s\n' "$CURSOR_THEME" "$CURSOR_SIZE" \
+                > "$HOME/.config/$v/settings.ini"
+        fi
+    done
+    ok "GTK $GTK_THEME, icons $ICON_THEME, cursor $CURSOR_THEME $CURSOR_SIZE"
 }
 
 # ------------------------- DOTFILES -------------------------
@@ -492,6 +500,7 @@ if (( ! DOTS_ONLY )); then
     install_hyprshot
 fi
 (( DOTS_ONLY )) || ensure_uwsm_session
+(( DOTS_ONLY )) || use_apt_hyprlock
 install_matugen
 install_fonts
 install_themes
