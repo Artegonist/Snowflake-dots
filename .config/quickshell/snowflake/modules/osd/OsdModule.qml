@@ -34,10 +34,12 @@ Scope {
     property string activeControl: ""
     property bool showing: false
 
-    property real volumePct: 0
-    property bool volumeMuted: false
+    readonly property var sinkAudio: Pipewire.defaultAudioSink?.ready ? Pipewire.defaultAudioSink.audio : null
+    readonly property var sourceAudio: Pipewire.defaultAudioSource?.ready ? Pipewire.defaultAudioSource.audio : null
+    readonly property real volumePct: Math.round((sinkAudio?.volume ?? 0) * 100)
+    readonly property bool volumeMuted: !!sinkAudio?.muted
     property real brightnessPct: 0
-    property bool micOn: true
+    readonly property bool micOn: !(sourceAudio?.muted ?? true)
     property bool capsOn: false
 
     property bool brightnessReady: false
@@ -77,23 +79,23 @@ Scope {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
     }
 
+    property var lastSink: null
+
     Connections {
-        target: Pipewire.defaultAudioSink?.audio ?? null
+        target: root.sinkAudio
         function onVolumeChanged() {
-            root.volumePct = Math.round((Pipewire.defaultAudioSink?.audio.volume ?? 0) * 100)
-            root.volumeMuted = !!Pipewire.defaultAudioSink?.audio.muted
-            if (root.oskReady) root.reveal("vol", 2200)
+            if (root.oskReady && root.lastSink === root.sinkAudio) root.reveal("vol", 2200)
         }
         function onMutedChanged() {
-            root.volumeMuted = !!Pipewire.defaultAudioSink?.audio.muted
-            if (root.oskReady) root.reveal("vol", 1600)
+            if (root.oskReady && root.lastSink === root.sinkAudio) root.reveal("vol", 1600)
         }
     }
 
+    onSinkAudioChanged: Qt.callLater(function() { root.lastSink = root.sinkAudio })
+
     Connections {
-        target: Pipewire.defaultAudioSource?.audio ?? null
+        target: root.sourceAudio
         function onMutedChanged() {
-            root.micOn = !(Pipewire.defaultAudioSource?.audio.muted ?? true)
             if (root.oskReady) root.reveal("mic", 1500)
         }
     }
@@ -220,7 +222,8 @@ Scope {
         target: "osd"
 
         function incVolume(delta: int): void {
-            root.setVolume(root.volumePct + delta)
+            if (!root.sinkAudio) return
+            root.setVolume(Math.round(root.sinkAudio.volume * 100) + delta)
         }
         function setVolumeAbs(pct: int): void {
             root.setVolume(pct)
