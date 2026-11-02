@@ -4,6 +4,9 @@ set -Eeuo pipefail
 # ------------------------- CONFIG -------------------------
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${SNOWFLAKE_BUILD_DIR:-$HOME/.cache/snowflake-build}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/snowflake"
+BASE_DIR="$STATE_DIR/base"
+INSTALLED_ENV="$STATE_DIR/installed.env"
 THEME="bloodsnow"
 SKIP_HYPRLAND=0
 DOTS_ONLY=0
@@ -383,7 +386,7 @@ deploy_dots() {
     while IFS= read -r -d '' src; do
         rel="${src#"$REPO_DIR"/}"
         dst="$HOME/$rel"
-        if [[ "$rel" == .local/share/* && -e "$dst" && "$rel" != .local/share/snowflake/wallpapers/* ]]; then
+        if [[ "$rel" == .local/share/* && -e "$dst" && "$rel" != .local/share/snowflake/wallpapers/* ]] && (( ! ${FORCE_LOCAL:-0} )); then
             continue
         fi
         if [[ -e "$dst" ]] && ! cmp -s "$src" "$dst"; then
@@ -392,11 +395,18 @@ deploy_dots() {
             backed=1
         fi
         install -Dm644 "$src" "$dst"
+        install -Dm644 "$src" "$BASE_DIR/$rel"
     done < <(find "$REPO_DIR/.config" "$REPO_DIR/.local" -type f -print0)
 
-    find "$HOME/.config/hypr/scripts" "$HOME/.config/waybar/scripts" "$HOME/.config/quickshell/snowflake" \
-        -type f -name '*.sh' -exec chmod +x {} +
     (( backed )) && info "Your previous versions of changed files are in $backup"
+    post_deploy
+}
+
+post_deploy() {
+    local d
+    for d in "$HOME/.config/hypr/scripts" "$HOME/.config/waybar/scripts" "$HOME/.config/quickshell/snowflake"; do
+        [[ -d "$d" ]] && find "$d" -type f -name '*.sh' -exec chmod +x {} +
+    done
 
     mkdir -p "$HOME/.config/quickshell/clipboard-module"
     mkdir -p "$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/screenshots"
@@ -452,6 +462,42 @@ enable_services() {
     ok "Services enabled"
 }
 
+# ------------------------- STATE -------------------------
+patch_sum() {
+    local f
+    for f in "$@"; do cat "$REPO_DIR/patches/$f"; done | sha256sum | cut -c1-16
+}
+
+fingerprint() {
+    local body
+    case "$1" in
+        hyprland)   body="$DH_REV $(patch_sum debian-hyprland-preset-defaults.patch) $(sha256sum < "$REPO_DIR/installer/debian-hyprland-preset.sh")" ;;
+        quickshell) body="$CLI11_REV $CPPTRACE_REV $QS_REV $(declare -f install_quickshell)" ;;
+        waybar)     body="$WAYBAR_REV $(patch_sum waybar-hyprland-legacy-ipc.patch waybar-taskbar-squash-fix.patch) $(declare -f install_waybar)" ;;
+        wofi)       body="$WOFI_REV $(declare -f install_wofi)" ;;
+        hyprshot)   body="$HYPRSHOT_REV $(patch_sum hyprshot-no-busy-wait.patch)" ;;
+        matugen)    body="$MATUGEN_VERSION" ;;
+        *)          die "Unknown component: $1" ;;
+    esac
+    printf '%s' "$body" | sha256sum | cut -c1-16
+}
+
+COMPONENTS=(hyprland quickshell waybar wofi hyprshot matugen)
+
+installed_fingerprint() {
+    [[ -f "$INSTALLED_ENV" ]] || return 0
+    sed -n "s/^$1=//p" "$INSTALLED_ENV"
+}
+
+record_component() {
+    local name="$1" fp
+    fp="$(fingerprint "$name")"
+    mkdir -p "$STATE_DIR"
+    touch "$INSTALLED_ENV"
+    sed -i "/^$name=/d" "$INSTALLED_ENV"
+    printf '%s=%s\n' "$name" "$fp" >> "$INSTALLED_ENV"
+}
+
 # ------------------------- CHECK -------------------------
 verify() {
     step "Checking the result"
@@ -474,6 +520,7 @@ verify() {
 }
 
 # ------------------------- MAIN -------------------------
+main() {
 while (( $# )); do
     case "$1" in
         --theme) THEME="${2:?--theme needs a name}"; shift ;;
@@ -494,14 +541,17 @@ ensure_deb_src
 install_packages
 if (( ! DOTS_ONLY )); then
     install_hyprland
-    install_quickshell
-    install_waybar
-    install_wofi
-    install_hyprshot
+    if (( ! SKIP_HYPRLAND )); then record_component hyprland; fi
+    install_quickshell; record_component quickshell
+    install_waybar; record_component waybar
+    install_wofi; record_component wofi
+    install_hyprshot; record_component hyprshot
 fi
-(( DOTS_ONLY )) || ensure_uwsm_session
-(( DOTS_ONLY )) || use_apt_hyprlock
-install_matugen
+if (( ! DOTS_ONLY )); then
+    ensure_uwsm_session
+    use_apt_hyprlock
+fi
+install_matugen; record_component matugen
 install_fonts
 install_themes
 deploy_dots
@@ -515,3 +565,8 @@ else
     printf '\n\033[1;33mSnowflake is installed with warnings, see above and %s\033[0m\n' "$LOG"
 fi
 printf 'Log: %s\n' "$LOG"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi
