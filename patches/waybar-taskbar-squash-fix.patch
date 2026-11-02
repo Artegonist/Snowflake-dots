@@ -1,0 +1,47 @@
+diff --git a/src/modules/wlr/taskbar.cpp b/src/modules/wlr/taskbar.cpp
+index 34960624..22f59212 100644
+--- a/src/modules/wlr/taskbar.cpp
++++ b/src/modules/wlr/taskbar.cpp
+@@ -274,14 +274,27 @@ void Task::hide_if_duplicate() {
+   const auto& squash_list = tbar_->squash_list();
+   bool contains_app =
+       squash_list.contains("*") || squash_list.contains(title_) || squash_list.contains(app_id_);
++  bool has_real_id = !app_id_.empty() && app_id_ != "unknown";
++
++  // Squash only behind another shown instance of the same app, and unsquash when it is gone
++  bool sibling_shown = false;
++  if (contains_app && has_real_id) {
++    for (auto& task : tbar_->tasks()) {
++      if (&task != this && task.app_id() == app_id_ && !task.squashed_ && !task.ignored_) {
++        sibling_shown = true;
++        break;
++      }
++    }
++  }
+ 
+-  // Squashes if the app is in the squash list and more than 1 instance is open
+-  if (contains_app && (tbar_->task_id_count(app_id_) > 1 || tbar_->task_title_count(title_) > 1)) {
++  if (sibling_shown) {
+     squashed_ = true;
+     hide_button();
++    return;
+   }
+ 
+-  if (!squashed_ && !ignored_ && (tbar_->all_outputs() || on_bar_output_)) {
++  squashed_ = false;
++  if (!ignored_ && (tbar_->all_outputs() || on_bar_output_)) {
+     show_button();
+   }
+ }
+@@ -1074,7 +1087,10 @@ void Taskbar::add_button(Gtk::Button& bt) {
+   box_.get_style_context()->remove_class("empty");
+ }
+ 
+-void Taskbar::move_button(Gtk::Button& bt, int pos) { box_.reorder_child(bt, pos); }
++void Taskbar::move_button(Gtk::Button& bt, int pos) {
++  if (bt.get_parent() != &box_) return;
++  box_.reorder_child(bt, pos);
++}
+ 
+ void Taskbar::remove_button(Gtk::Button& bt) {
+   box_.remove(bt);
