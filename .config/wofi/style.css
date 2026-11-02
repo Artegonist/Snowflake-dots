@@ -6,7 +6,7 @@ window {
     border: 3px solid @accent_primary;
 }
 #input {
-    margin: 10px;
+    margin: 15px 15px 10px 15px;
     border-radius: 8px;
     background-color: alpha(@bg_input_wofi, 0.9);
     color: @wofi_input_text;
@@ -22,12 +22,12 @@ window {
     border-radius: 8px;
 }
 #outer-box {
-    margin: 5px;
+    margin: 0;
     background-color: transparent;
     border-radius: 8px;
 }
 #scroll {
-    margin: 5px;
+    margin: 5px 10px 10px 10px;
     border-radius: 8px;
 }
 #text {
