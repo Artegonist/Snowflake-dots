@@ -415,7 +415,25 @@ post_deploy() {
 
     mkdir -p "$HOME/.config/autostart"
     printf '[Desktop Entry]\nHidden=true\n' > "$HOME/.config/autostart/blueman.desktop"
+    skip_autostart_in_hyprland 'ibus|im-launch|fcitx'
     ok "Configs copied"
+}
+
+skip_autostart_in_hyprland() {
+    local pattern="$1" src dst
+    for src in /etc/xdg/autostart/*.desktop; do
+        [[ -f "$src" ]] || continue
+        grep -qiE "^(Exec|TryExec)=.*($pattern)" "$src" || continue
+        dst="$HOME/.config/autostart/$(basename "$src")"
+        [[ -e "$dst" ]] && ! grep -q '^X-Snowflake=true' "$dst" && continue
+        if grep -q '^NotShowIn=' "$src"; then
+            sed -E '/^NotShowIn=/{/Hyprland;/!s/$/;Hyprland;/;s/;;/;/g}' "$src" > "$dst"
+        else
+            sed '/^\[Desktop Entry\]/a NotShowIn=Hyprland;' "$src" > "$dst"
+        fi
+        printf 'X-Snowflake=true\n' >> "$dst"
+    done
+    return 0
 }
 
 fix_temperature_sensor() {
