@@ -16,7 +16,8 @@ Usage: ${0##*/} [options]
 
   (no option)    update: keep your own changes (binds, settings) and merge new ones in
   --reset        reinstall configs: everything back to the Snowflake defaults (with a backup)
-  --check        only show what would be updated, change nothing
+  --check        only show which new commits are on GitHub, change nothing
+  --dry-run      show what update would do with your files, change nothing
   --no-build     update configs only, do not rebuild Quickshell / Waybar / tools
   -h, --help     show this help
 EOF
@@ -136,6 +137,56 @@ reset_dots() {
     fix_temperature_sensor
 }
 
+plan_dots() {
+    step "Dry run: what would happen to your files (nothing is changed)"
+    local src rel dst base
+    local -a new=() replace=() merge=() keep=() conflict=() unknown=()
+
+    while IFS= read -r -d '' src; do
+        rel="${src#"$REPO_DIR"/}"
+        dst="$HOME/$rel"
+        base="$BASE_DIR/$rel"
+        if [[ ! -e "$dst" ]]; then new+=("$rel"); continue; fi
+        [[ "$rel" == .local/share/* ]] && continue
+        cmp -s "$src" "$dst" && continue
+        if [[ ! -f "$base" ]]; then unknown+=("$rel"); continue; fi
+        if cmp -s "$dst" "$base"; then replace+=("$rel"); continue; fi
+        if cmp -s "$src" "$base"; then keep+=("$rel"); continue; fi
+        if git merge-file -p -q "$dst" "$base" "$src" >/dev/null 2>&1; then
+            merge+=("$rel")
+        else
+            conflict+=("$rel")
+        fi
+    done < <(find "$REPO_DIR/.config" "$REPO_DIR/.local" -type f -print0)
+
+    local rel_
+    if (( ${#new[@]} )); then info "Would be added (${#new[@]}):"; for rel_ in "${new[@]}"; do printf '     ~/%s\n' "$rel_"; done; fi
+    if (( ${#replace[@]} )); then info "Would be replaced, you never changed them (${#replace[@]}):"; for rel_ in "${replace[@]}"; do printf '     ~/%s\n' "$rel_"; done; fi
+    if (( ${#merge[@]} )); then info "Would be merged with your changes (${#merge[@]}):"; for rel_ in "${merge[@]}"; do printf '     ~/%s\n' "$rel_"; done; fi
+    if (( ${#keep[@]} )); then info "Kept as you changed them (${#keep[@]}):"; for rel_ in "${keep[@]}"; do printf '     ~/%s\n' "$rel_"; done; fi
+    if (( ${#conflict[@]} )); then warn "Conflict, your version kept + .snowflake-new next to it (${#conflict[@]}):"; for rel_ in "${conflict[@]}"; do printf '     ~/%s\n' "$rel_" >&2; done; fi
+    if (( ${#unknown[@]} )); then warn "Differ from Snowflake, no record of the last install, your version kept + .snowflake-new (${#unknown[@]}):"; for rel_ in "${unknown[@]}"; do printf '     ~/%s\n' "$rel_" >&2; done; fi
+    if (( ${#new[@]} + ${#replace[@]} + ${#merge[@]} + ${#keep[@]} + ${#conflict[@]} + ${#unknown[@]} == 0 )); then ok "Your configs already match Snowflake"; fi
+
+    step "Dry run: what would be rebuilt"
+    local name now was any=0
+    for name in "${COMPONENTS[@]}"; do
+        now="$(fingerprint "$name")"
+        was="$(installed_fingerprint "$name")"
+        [[ "$now" == "$was" ]] && continue
+        any=1
+        if [[ "$name" == hyprland ]]; then
+            if [[ -n "$was" ]]; then info "hyprland: changed, would only warn (rebuilt by install.sh)"; fi
+        elif [[ -z "$was" ]]; then
+            info "$name: would be rebuilt (no record of how it was installed)"
+        else
+            info "$name: would be rebuilt (new version or patch)"
+        fi
+    done
+    (( any )) || ok "Nothing would be rebuilt"
+    info "Dry run finished, nothing was changed. Run without --dry-run to apply."
+}
+
 # ------------------------- COLORS -------------------------
 regenerate_colors() {
     step "Colors"
@@ -208,6 +259,7 @@ while (( $# )); do
     case "$1" in
         --reset) MODE="reset" ;;
         --check) MODE="check" ;;
+        --dry-run) MODE="dry" ;;
         --no-build) NO_BUILD=1 ;;
         --pulled) PULLED=1 ;;
         -h | --help) usage; exit 0 ;;
@@ -218,6 +270,11 @@ done
 
 if [[ "$MODE" == check ]]; then
     check_only
+    exit 0
+fi
+
+if [[ "$MODE" == dry ]]; then
+    plan_dots
     exit 0
 fi
 
