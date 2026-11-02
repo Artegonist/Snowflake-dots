@@ -452,9 +452,12 @@ enable_services() {
     for unit in pipewire.socket pipewire-pulse.socket wireplumber.service swaync.service; do
         systemctl --user enable "$unit" 2>/dev/null || warn "Could not enable user $unit"
     done
-    if systemctl --user is-enabled waybar.service >/dev/null 2>&1; then
+    if [[ "$(systemctl --user is-enabled waybar.service 2>/dev/null)" != masked ]] \
+        && systemctl --user cat waybar.service >/dev/null 2>&1; then
+        sudo systemctl --global disable waybar.service 2>/dev/null || true
         systemctl --user disable --now waybar.service 2>/dev/null || true
-        info "Disabled waybar.service from the Debian package, Hyprland starts the patched Waybar itself"
+        systemctl --user mask waybar.service 2>/dev/null || warn "Could not mask waybar.service"
+        info "Masked waybar.service from the Debian package, Hyprland starts the patched Waybar itself"
     fi
     ok "Services enabled"
 }
