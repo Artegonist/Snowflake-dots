@@ -45,12 +45,12 @@ Multiple themes and wallpapers are included, so you can choose the vibe that fit
 ### 1. Prepare the system
 Make sure your user can use `sudo`:
 ```bash
-sudo -v
+su -
 ```
-If it says `is not in the sudoers file`, add yourself (asks for the root password), then log out and back in:
 ```bash
-su -c "usermod -aG sudo $USER"
+usermod -aG sudo "your user"
 ```
+Then reboot your system
 
 Update the system, install git and reboot:
 ```bash
