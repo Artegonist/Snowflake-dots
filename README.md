@@ -121,6 +121,8 @@ If the installer stops with an error, [open an issue](https://github.com/Artegon
 ```bash
 bash install.sh --skip-hyprland
 ```
-
 # What's next
 - Moving the Hyprland config to the new Lua syntax.
+- Turning the rice from a set of dotfiles into a complete desktop shell (maybe even a full ISO).
+- Replacing Waybar, Wofi, Hyprshot and other tools with Quickshell-based alternatives.
+- A new "Ecosystem" tab in the Hub with additional software.
