@@ -64,6 +64,21 @@ PanelWindow {
     }
 
     //--------------------- FOCUS TRACKING ----------------------
+    function rememberFullscreen(addr, value) {
+        if (fsCache[addr] === value) return
+        const next = Object.assign({}, fsCache)
+        next[addr] = value
+        fsCache = next
+    }
+
+    function forgetFullscreen(addr) {
+        if (fsCache[addr] === undefined) return
+        const next = {}
+        for (const k in fsCache)
+            if (k !== addr) next[k] = fsCache[k]
+        fsCache = next
+    }
+
     Connections {
         target: Hyprland
         function onRawEvent(event) {
@@ -85,7 +100,7 @@ PanelWindow {
                 // data: адрес,воркспейс,класс,заголовок
                 root.applyLayout((event.data.split(",")[2] || "").toLowerCase())
             } else if (event.name === "closewindow") {
-                delete root.fsCache["0x" + event.data]
+                root.forgetFullscreen("0x" + event.data)
             } else if (event.name === "configreloaded") {
                 // hyprctl reload сбрасывает динамические бинды
                 root.applyBinds()
@@ -106,7 +121,7 @@ PanelWindow {
                     root.fullscreen = (w.fullscreen === 2)
                                    || (w.fullscreen === true && w.fullscreenMode !== 1)
                     if (w.address)
-                        root.fsCache[w.address] = root.fullscreen
+                        root.rememberFullscreen(w.address, root.fullscreen)
                 } catch (e) {
                     root.focusedClass = ""
                     root.fullscreen = false
