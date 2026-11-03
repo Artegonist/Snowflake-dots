@@ -80,6 +80,7 @@ Scope {
     }
 
     property var lastSink: null
+    property string knownSinkKey: ""
 
     Connections {
         target: root.sinkAudio
@@ -91,7 +92,24 @@ Scope {
         }
     }
 
-    onSinkAudioChanged: Qt.callLater(function() { root.lastSink = root.sinkAudio })
+    function checkSinkSwitch() {
+        const sink = Pipewire.defaultAudioSink
+        if (!root.sinkAudio || !sink) return
+        const key = sink.id + "|" + (sink.description || sink.name || "")
+        if (root.oskReady && root.knownSinkKey !== "" && root.knownSinkKey !== key) root.reveal("vol", 2200)
+        root.knownSinkKey = key
+    }
+
+    onSinkAudioChanged: Qt.callLater(function() {
+        root.lastSink = root.sinkAudio
+        root.checkSinkSwitch()
+    })
+
+    Connections {
+        target: Pipewire.defaultAudioSink
+        ignoreUnknownSignals: true
+        function onDescriptionChanged() { Qt.callLater(root.checkSinkSwitch) }
+    }
 
     Connections {
         target: root.sourceAudio
