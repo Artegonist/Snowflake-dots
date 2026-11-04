@@ -130,7 +130,9 @@ bash install.sh --skip-hyprland
 - Replacing Waybar, Wofi, Hyprshot and other tools with Quickshell-based alternatives.
 - A new "Ecosystem" tab in the Hub with additional software.
 - Upgrading install and update scripts.
-- Addaind delete script.
+- Addind delete script.
+- Wiki of the project
+- Adding different languages support (English first).
 - Adding more disto support (Void and Arch will most likely be added first).
 
 # License
