@@ -129,6 +129,9 @@ bash install.sh --skip-hyprland
 - Turning the rice from a set of dotfiles into a complete desktop shell (maybe even a full ISO).
 - Replacing Waybar, Wofi, Hyprshot and other tools with Quickshell-based alternatives.
 - A new "Ecosystem" tab in the Hub with additional software.
+- Upgrading install and update scripts.
+- Addaind delete script.
+- Adding more disto support (Void and Arch will most likely be added first).
 
 # License
 Snowflake is licensed under the [GNU GPL v3.0](LICENSE). Wallpapers are not covered by this license, see the disclaimer above.
