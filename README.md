@@ -55,7 +55,7 @@ exit
 ```
 Then reboot your system
 
-Update the system, install git and reboot:
+Update the systeь and install git:
 ```bash
 sudo apt update && sudo apt full-upgrade -y
 sudo apt install -y git
