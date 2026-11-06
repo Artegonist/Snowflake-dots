@@ -31,9 +31,8 @@ PanelWindow {
 
     anchors { bottom: true; right: true }
     margins { bottom: 3; right: 3 }
-    readonly property real uiScale: UiScale.scaleFor("macro", root.screen, 288, 70)
-    implicitWidth: Math.round(288 * root.uiScale)
-    implicitHeight: Math.round(70 * root.uiScale)
+    implicitWidth: 288
+    implicitHeight: 70
 
     //--------------------- LIFECYCLE ----------------------
     // F9-F12 теперь ВСЕГДА забиндены на global shortcut, пока работает quickshell.
@@ -341,10 +340,7 @@ PanelWindow {
     //--------------------- WRAPPER (прячется при наведении) ----------------------
     Item {
         id: wrapper
-        width: 288
-        height: 70
-        scale: root.uiScale
-        transformOrigin: Item.TopLeft
+        anchors.fill: parent
 
         opacity: root.cursorOver ? 0 : 1
         Behavior on opacity {

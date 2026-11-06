@@ -62,10 +62,8 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    // ------------------------- UI SCALE -------------------------
-    readonly property real uiScale: UiScale.scaleFor("battery", root.screen, 300, 300)
-    implicitWidth: Math.round(300 * root.uiScale)
-    implicitHeight: Math.round(300 * root.uiScale)
+    implicitWidth: 300
+    implicitHeight: 300
 
     // ---------- COLORS ----------
     readonly property color accentPrimary: Theme.accentPrimary
@@ -135,7 +133,7 @@ PanelWindow {
     readonly property var profiles: [
         { label: "Экономия", profile: PowerProfile.PowerSaver },
         { label: "Баланс", profile: PowerProfile.Balanced },
-        { label: "Мощность", profile: PowerProfile.Performance }
+        { label: "Моooooщ", profile: PowerProfile.Performance }
     ]
 
     HyprlandFocusGrab {
@@ -149,18 +147,8 @@ PanelWindow {
             root.expanded = true
     }
 
-    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
-    Item {
-        id: scaler
-        width: 300
-        height: 300
-        scale: root.uiScale
-        transformOrigin: Item.TopLeft
-    }
-
     Rectangle {
         id: card
-        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel

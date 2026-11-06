@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
-import "../../services"
 
 Item {
     id: win
@@ -22,8 +21,7 @@ Item {
         { id: "weather",    title: "Погода",        icon: "󰖕" },
         { id: "clock",      title: "Мировое время", icon: "󰇧" },
         { id: "timer",      title: "Таймер",        icon: "󰔛" },
-        { id: "wallpaper",  title: "Тема из обоев", icon: "󰋩" },
-        { id: "interface",  title: "Интерфейс",     icon: "󰍹" }
+        { id: "wallpaper",  title: "Тема из обоев", icon: "󰋩" }
     ]
 
     readonly property var wt: win.hub.wallpaperTheme
@@ -127,48 +125,6 @@ Item {
             cursorShape: Qt.PointingHandCursor
             onClicked: tg.toggled(!tg.checked)
         }
-    }
-
-    component StepButton: Rectangle {
-        id: sb
-        required property var hub
-        property string label: ""
-        property bool wide: false
-
-        signal clicked
-
-        implicitWidth: sb.wide ? 84 : 32
-        implicitHeight: 32
-        radius: 16
-        color: sbArea.pressed ? Qt.darker(sb.hub.bgTrack, 1.3) : (sbArea.containsMouse ? Qt.lighter(sb.hub.bgTrack, 1.25) : sb.hub.bgTrack)
-
-        Behavior on color { ColorAnimation { duration: 120 } }
-
-        Text {
-            anchors.centerIn: parent
-            text: sb.label
-            color: sb.hub.textMain
-            font.pixelSize: 15
-            font.bold: true
-        }
-
-        MouseArea {
-            id: sbArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: sb.clicked()
-        }
-    }
-
-    function stepGlobalScale(dir) {
-        const cur = UiScale.baseScale(win.hub.screen)
-        UiScale.setUserScale(Math.round(cur / UiScale.step) * UiScale.step + dir * UiScale.step)
-    }
-
-    function stepPanelScale(key, dir) {
-        const cur = UiScale.panelMultiplier(key)
-        UiScale.setPanelScale(key, Math.round(cur / UiScale.step) * UiScale.step + dir * UiScale.step)
     }
 
     component Page: Item {
@@ -909,174 +865,6 @@ Item {
                                 hub: win.hub
                                 checked: win.timer.notify
                                 onToggled: function(value) { win.timer.setNotify(value) }
-                            }
-                        }
-                    }
-                }
-
-                // ------------------------- INTERFACE -------------------------
-                Page {
-                    anchors.fill: parent
-                    current: win.section === "interface"
-
-                    ColumnLayout {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        spacing: 10
-
-                        SectionTitle {
-                            hub: win.hub
-                            Layout.bottomMargin: 6
-                            title: "Интерфейс"
-                            text: "Масштаб окон. «Авто» подбирает его по размеру экрана; ниже каждое окно можно подстроить отдельно"
-                        }
-
-                        FieldLabel { hub: win.hub; text: "Общий масштаб" }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-
-                            StepButton {
-                                hub: win.hub
-                                label: "−"
-                                onClicked: win.stepGlobalScale(-1)
-                            }
-
-                            Rectangle {
-                                Layout.preferredWidth: 140
-                                Layout.preferredHeight: 32
-                                radius: 16
-                                color: "transparent"
-                                border.width: 1
-                                border.color: win.hub.accentPrimary
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: (UiScale.userScale > 0 ? "" : "Авто · ") + Math.round(UiScale.baseScale(win.hub.screen) * 100) + "%"
-                                    color: win.hub.textMain
-                                    font.pixelSize: 14
-                                    font.bold: true
-                                }
-                            }
-
-                            StepButton {
-                                hub: win.hub
-                                label: "+"
-                                onClicked: win.stepGlobalScale(1)
-                            }
-                        }
-
-                        Flow {
-                            Layout.fillWidth: true
-                            spacing: 8
-
-                            Repeater {
-                                model: [0, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5]
-
-                                delegate: Rectangle {
-                                    id: scaleChip
-                                    required property real modelData
-                                    readonly property bool active: Math.abs(UiScale.userScale - scaleChip.modelData) < 0.001
-
-                                    width: 81
-                                    height: 32
-                                    radius: 16
-                                    color: scaleChip.active ? win.hub.accentPrimary : win.hub.bgTrack
-
-                                    Behavior on color { ColorAnimation { duration: 160 } }
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: scaleChip.modelData === 0 ? "Авто" : Math.round(scaleChip.modelData * 100) + "%"
-                                        color: scaleChip.active ? win.hub.bgPanel : win.hub.textMain
-                                        font.pixelSize: 13
-                                        font.bold: true
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: UiScale.setUserScale(scaleChip.modelData)
-                                    }
-                                }
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: "Окно никогда не станет больше экрана, даже при большом значении"
-                            color: win.hub.textDim
-                            font.pixelSize: 11
-                            wrapMode: Text.WordWrap
-                        }
-
-                        FieldLabel { hub: win.hub; text: "Отдельные окна (множитель к общему масштабу)"; Layout.topMargin: 6 }
-
-                        GridLayout {
-                            Layout.fillWidth: true
-                            columns: 2
-                            columnSpacing: 28
-                            rowSpacing: 6
-
-                            Repeater {
-                                model: UiScale.panelList
-
-                                delegate: RowLayout {
-                                    id: panelRow
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    spacing: 6
-
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: panelRow.modelData.title
-                                        color: win.hub.textMain
-                                        font.pixelSize: 13
-                                        elide: Text.ElideRight
-                                    }
-
-                                    StepButton {
-                                        hub: win.hub
-                                        label: "−"
-                                        onClicked: win.stepPanelScale(panelRow.modelData.id, -1)
-                                    }
-
-                                    Text {
-                                        Layout.preferredWidth: 46
-                                        horizontalAlignment: Text.AlignHCenter
-                                        text: Math.round(UiScale.panelMultiplier(panelRow.modelData.id) * 100) + "%"
-                                        color: Math.abs(UiScale.panelMultiplier(panelRow.modelData.id) - 1) < 0.001 ? win.hub.textDim : win.hub.accentPrimary
-                                        font.pixelSize: 13
-                                        font.bold: true
-                                    }
-
-                                    StepButton {
-                                        hub: win.hub
-                                        label: "+"
-                                        onClicked: win.stepPanelScale(panelRow.modelData.id, 1)
-                                    }
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.topMargin: 6
-                            spacing: 8
-
-                            StepButton {
-                                hub: win.hub
-                                wide: true
-                                label: "Сбросить"
-                                implicitWidth: 110
-                                onClicked: UiScale.resetAll()
-                            }
-
-                            Text {
-                                text: "общий масштаб → Авто, все окна → 100%"
-                                color: win.hub.textDim
-                                font.pixelSize: 11
                             }
                         }
                     }

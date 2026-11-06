@@ -99,14 +99,10 @@ PanelWindow {
     readonly property int pad: 20
     readonly property int gap: 16
     readonly property int pageGap: 48
-    // Hub рисуется в эталонном размере baseWidth x baseHeight и масштабируется целиком (см. services/UiScale.qml)
-    readonly property int baseWidth: 1500
-    readonly property int baseHeight: 800
-    readonly property real uiScale: UiScale.scaleFor("hub", root.screen, root.baseWidth, root.baseHeight)
-    readonly property int colWidth: Math.floor((root.baseWidth - 2 * root.pad - 4 * root.gap - 2) / 3)
+    readonly property int colWidth: Math.floor((root.implicitWidth - 2 * root.pad - 4 * root.gap - 2) / 3)
 
-    implicitWidth: Math.round(root.baseWidth * root.uiScale)
-    implicitHeight: Math.round(root.baseHeight * root.uiScale)
+    implicitWidth: 1500
+    implicitHeight: 800
 
     // ------------------------- PAGES -------------------------
     readonly property var pages: [
@@ -227,17 +223,8 @@ PanelWindow {
     }
 
     // ------------------------- CARD -------------------------
-    Item {
-        id: scaler
-        width: root.baseWidth
-        height: root.baseHeight
-        scale: root.uiScale
-        transformOrigin: Item.TopLeft
-    }
-
     Rectangle {
         id: card
-        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel

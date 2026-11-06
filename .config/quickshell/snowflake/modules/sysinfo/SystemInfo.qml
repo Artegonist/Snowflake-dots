@@ -65,10 +65,8 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    // ------------------------- UI SCALE -------------------------
-    readonly property real uiScale: UiScale.scaleFor("sysinfo", root.screen, 420, 540)
-    implicitWidth: Math.round(420 * root.uiScale)
-    implicitHeight: Math.round(540 * root.uiScale)
+    implicitWidth: 420
+    implicitHeight: 540
 
     //----------------COLORS----------------
     readonly property color accentPrimary: Theme.accentPrimary
@@ -561,18 +559,8 @@ PanelWindow {
     }
 
     //----------------LAYOUT----------------
-    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
-    Item {
-        id: scaler
-        width: 420
-        height: 540
-        scale: root.uiScale
-        transformOrigin: Item.TopLeft
-    }
-
     Rectangle {
         id: card
-        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel

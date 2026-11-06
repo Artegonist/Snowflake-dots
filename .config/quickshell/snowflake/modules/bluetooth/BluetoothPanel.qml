@@ -87,10 +87,8 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    // ------------------------- UI SCALE -------------------------
-    readonly property real uiScale: UiScale.scaleFor("bluetooth", root.screen, 380, 540)
-    implicitWidth: Math.round(380 * root.uiScale)
-    implicitHeight: Math.round(540 * root.uiScale)
+    implicitWidth: 380
+    implicitHeight: 540
 
     //----------------COLORS----------------
     readonly property color accentPrimary:   Theme.accentPrimary
@@ -610,18 +608,8 @@ PanelWindow {
     }
 
     //----------------LAYOUT----------------
-    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
-    Item {
-        id: scaler
-        width: 380
-        height: 540
-        scale: root.uiScale
-        transformOrigin: Item.TopLeft
-    }
-
     Rectangle {
         id: card
-        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel

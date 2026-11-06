@@ -305,11 +305,8 @@ Scope {
         id: notchWindow
         screen: root.targetScreen
         anchors { bottom: true }
-        readonly property int baseWidth: root.notchWidth + 2 * root.earRadius
-        readonly property int baseHeight: root.notchHeight + root.earRadius + root.topInset
-        readonly property real uiScale: UiScale.scaleFor("osd", notchWindow.screen, notchWindow.baseWidth, notchWindow.baseHeight)
-        implicitWidth: Math.round(notchWindow.baseWidth * notchWindow.uiScale)
-        implicitHeight: Math.round(notchWindow.baseHeight * notchWindow.uiScale)
+        implicitWidth: root.notchWidth + 2 * root.earRadius
+        implicitHeight: root.notchHeight + root.earRadius + root.topInset
         exclusiveZone: 0
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Overlay
@@ -378,10 +375,7 @@ Scope {
 
         Item {
             id: cardVisual
-            width: notchWindow.baseWidth
-            height: notchWindow.baseHeight
-            scale: notchWindow.uiScale
-            transformOrigin: Item.TopLeft
+            anchors.fill: parent
 
             property real hn: root.showing ? root.notchHeight : 0
             
