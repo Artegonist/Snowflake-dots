@@ -25,6 +25,15 @@
 > [!NOTE]
 > This project was configured and tuned by me. AI was used for routine tasks and bug hunting. The configuration and testing were mostly done by me, including real-life daily use on Debian 13 (Trixie).
 
+> [!NOTE]
+> Project is in active beta now, it has a few major bugs that might or might not appear on your machine, i recomend to not install it unless your machine has monitor of minimal size of 1920x1080
+
+## Branches
+
+- **`main`** — stable version. Use this one.
+- **`dev`** — experimental playground. Things may be broken, half-finished
+  or rewritten at any moment. Don't rely on it.
+
 ## About
 Snowflake is my daily-driver Hyprland rice: simple enough to be practical, polished enough to look good. Everything here is something I actually use, not a showcase setup that falls apart in real life.
 Multiple themes and wallpapers are included, so you can choose the vibe that fits you.
