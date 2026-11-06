@@ -11,8 +11,10 @@ PanelWindow {
 
     visible: false
     color: "transparent"
-    implicitWidth: 480
-    implicitHeight: 660
+    // ------------------------- UI SCALE -------------------------
+    readonly property real uiScale: UiScale.scaleFor("pet", root.screen, 480, 660)
+    implicitWidth: Math.round(480 * root.uiScale)
+    implicitHeight: Math.round(660 * root.uiScale)
     exclusionMode: ExclusionMode.Ignore
     anchors { top: true; left: true }
     margins { top: 30; left: 3 }
@@ -2146,8 +2148,18 @@ PanelWindow {
         MouseArea { id: careMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: care.clicked() }
     }
 
+    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
+    Item {
+        id: scaler
+        width: 480
+        height: 660
+        scale: root.uiScale
+        transformOrigin: Item.TopLeft
+    }
+
     Rectangle {
         id: card
+        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel
