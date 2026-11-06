@@ -17,39 +17,35 @@
 </table>
 
 > [!CAUTION]
-> **DISCLAIMER:**
-> **- THIS RICE IS MADE AND TESTED ONLY ON DEBIAN 13 (TRIXIE). I CANNOT GUARANTEE FLAWLESS WORK ON OTHER DISTROS.**
-> **- THE WM CONFIG USES THE OLD HYPRLAND SYNTAX AND DOES NOT SUPPORT THE NEW LUA SYNTAX YET. SEE [WHAT'S NEXT](#whats-next) FOR UPCOMING CHANGES.**
-> **- NOT ALL WALLPAPERS ARE MINE. ALL WALLPAPERS WERE EITHER FOUND ON FREE STOCK SITES OR GIVEN TO ME BY PEOPLE I KNOW. I DO NOT CLAIM ANY RIGHTS TO THEM AND THEY ARE NOT COVERED BY THIS REPOSITORY'S LICENSE. IF YOU ARE THE AUTHOR AND WANT YOUR WALLPAPER DELETED, PLEASE [OPEN AN ISSUE](https://github.com/Artegonist/Snowflake-dots/issues).**
+> **DISCLAIMER**
+> - This rice is made and tested only on **Debian 13 (Trixie)**. I cannot guarantee that it works flawlessly on other distros.
+> - The WM config uses the old Hyprland syntax and does not support the new Lua syntax yet. See [What's next](#whats-next) for upcoming changes.
+> - Not all wallpapers are mine. They were either found on free stock sites or given to me by people I know. I do not claim any rights to them, and they are not covered by this repository's license. If you are the author and want your wallpaper removed, please [open an issue](https://github.com/Artegonist/Snowflake-dots/issues).
 
 > [!NOTE]
-> This project was configured and tuned by me. AI was used for routine tasks and bug hunting. The configuration and testing were mostly done by me, including real-life daily use on Debian 13 (Trixie).
+> This project was configured and tuned by me. AI was used for routine tasks and bug hunting, while the configuration and testing were mostly done by me, including real-life daily use on Debian 13 (Trixie).
 
 > [!NOTE]
-> Project is in active beta now, it has a few major bugs that might or might not appear on your machine, i recomend to not install it unless your machine has monitor of minimal size of 1920x1080
-
-## Branches
-
-- **`main`** — stable version. Use this one.
-- **`dev`** — experimental playground. Things may be broken, half-finished
-  or rewritten at any moment. Don't rely on it.
+> The project is in active beta. It has a few major bugs that may or may not appear on your machine. I don't recommend installing it on a monitor smaller than 1920×1080.
 
 ## About
 Snowflake is my daily-driver Hyprland rice: simple enough to be practical, polished enough to look good. Everything here is something I actually use, not a showcase setup that falls apart in real life.
+
 Multiple themes and wallpapers are included, so you can choose the vibe that fits you.
 
 ## Components
 - **WM:** Hyprland 0.55.3
-- **TOPBAR:** Waybar 0.15.0 (a custom-built version with an essential fix made by me, see the wiki of this project)
-- **LAUNCHER:** Wofi
-- **WIDGETS:** Quickshell 0.3.0
+- **Top bar:** Waybar 0.15.0 (a custom build with an essential fix made by me, details coming in the project wiki)
+- **Launcher:** Wofi
+- **Widgets:** Quickshell 0.3.0
 
 ## Requirements
 - **Debian 13 (Trixie)**
 - **A user in the sudo group**
+- **A monitor of at least 1920×1080**
 - **About 10 GB of free disk space and an internet connection**
 
-# Installation
+## Installation
 
 ### 1. Prepare the system
 Make sure your user can use `sudo`:
@@ -57,12 +53,13 @@ Make sure your user can use `sudo`:
 su -
 ```
 ```bash
-usermod -aG sudo "your user"
+usermod -aG sudo <username>
 ```
+Replace `<username>` with your login name.
 ```bash
 exit
 ```
-Then reboot your system
+Then reboot your system.
 
 Update the system and install git:
 ```bash
@@ -119,7 +116,7 @@ Reboot. On the login screen click your user, then the gear icon in the bottom ri
 > ```
 > **Virtual machines:** enable 3D acceleration, otherwise Hyprland will not start.
 
-# Updating
+## Updating
 ```bash
 cd ~/Snowflake-dots
 bash update.sh
@@ -128,21 +125,26 @@ bash update.sh
 - `bash update.sh --reset` brings all configs back to the Snowflake defaults. Old files go to `~/.snowflake-backup`.
 - `bash update.sh --check` only shows what would change.
 
-# Troubleshooting
-If the installer stops with an error, [open an issue](https://github.com/Artegonist/Snowflake-dots/issues) and attach the log from `~/.cache/snowflake-build/install-*.log` (the path is printed on the last line). If Hyprland already built and something failed later, continue with:
+## Branches
+- **`main`** — stable version. Use this one.
+- **`dev`** — experimental playground. Things may be broken, half-finished or rewritten at any moment. Don't rely on it.
+
+## Troubleshooting
+If the installer stops with an error, [open an issue](https://github.com/Artegonist/Snowflake-dots/issues) and attach the log from `~/.cache/snowflake-build/install-*.log` (the path is printed on the last line). If Hyprland is already built and something failed later, continue with:
 ```bash
 bash install.sh --skip-hyprland
 ```
-# What's next
+
+## What's next
 - Moving the Hyprland config to the new Lua syntax.
 - Turning the rice from a set of dotfiles into a complete desktop shell (maybe even a full ISO).
 - Replacing Waybar, Wofi, Hyprshot and other tools with Quickshell-based alternatives.
 - A new "Ecosystem" tab in the Hub with additional software.
-- Upgrading install and update scripts.
-- Addind delete script.
-- Wiki of the project
-- Adding different languages support (English first).
-- Adding more disto support (Void and Arch will most likely be added first).
+- Improving the install and update scripts.
+- An uninstall script.
+- A project wiki.
+- Support for more languages (English first).
+- Support for more distros (Void and Arch will most likely come first).
 
-# License
+## License
 Snowflake is licensed under the [GNU GPL v3.0](LICENSE). Wallpapers are not covered by this license, see the disclaimer above.
