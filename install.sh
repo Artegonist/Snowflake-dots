@@ -10,6 +10,7 @@ INSTALLED_ENV="$STATE_DIR/installed.env"
 THEME="bloodsnow"
 SKIP_HYPRLAND=0
 DOTS_ONLY=0
+SESSION_ONLY=0
 
 DH_REPO="https://github.com/LinuxBeginnings/Debian-Hyprland.git"
 DH_REV="82f81c6f76dceb99a05f7236003244253248a1ae"
@@ -32,6 +33,14 @@ GTK_THEME="Adwaita"
 ICON_THEME="Adwaita"
 CURSOR_THEME="Flat-Remix-Blue-Dark"
 CURSOR_SIZE=24
+
+# Distro backend knobs (installer/void.sh overrides them on Void Linux)
+DISTRO="debian"
+VERIFY_CMDS=(Hyprland hyprctl uwsm hypridle hyprlock qs waybar wofi matugen hyprshot swaybg cliphist kitty fastfetch nmcli)
+BANNER_SUBTITLE="Simply beautiful · Hyprland rice for Debian 13"
+PHASE_SOURCES_LABEL="APT sources"
+PHASE_HYPRLAND_LABEL="Hyprland 0.55.3 (Debian-Hyprland)"
+PHASE_SESSION_LABEL="Login session (uwsm)"
 
 RUNTIME_PKGS=(
     git curl wget unzip jq socat python3 file
@@ -84,6 +93,7 @@ Usage: ${0##*/} [options]
   --theme NAME       default theme from .config/matugen/themes (default: $THEME)
   --skip-hyprland    do not run Debian-Hyprland (Hyprland is already installed)
   --dots-only        only copy configs, fonts and themes, build nothing
+  --session-only     only (re)install the session launcher (Void: snowflake-session), build nothing
   --yes              do not ask for confirmation before starting
   --full-log         show the full build output instead of progress lines
   -h, --help         show this help
@@ -503,10 +513,18 @@ patch_sum() {
     for f in "$@"; do cat "$REPO_DIR/patches/$f"; done | sha256sum | cut -c1-16
 }
 
+hyprland_fingerprint_body() {
+    printf '%s' "$DH_REV $(patch_sum debian-hyprland-preset-defaults.patch) $(sha256sum < "$REPO_DIR/installer/debian-hyprland-preset.sh")"
+}
+
+print_finish_hint() {
+    printf '     Reboot, then on the login screen pick %sHyprland (uwsm-managed)%s.\n' "$C_BOLD" "$C_RESET"
+}
+
 fingerprint() {
     local body
     case "$1" in
-        hyprland)   body="$DH_REV $(patch_sum debian-hyprland-preset-defaults.patch) $(sha256sum < "$REPO_DIR/installer/debian-hyprland-preset.sh")" ;;
+        hyprland)   body="$(hyprland_fingerprint_body)" ;;
         quickshell) body="$CLI11_REV $CPPTRACE_REV $QS_REV $(declare -f install_quickshell)" ;;
         waybar)     body="$WAYBAR_REV $(patch_sum waybar-hyprland-legacy-ipc.patch waybar-taskbar-squash-fix.patch) $(declare -f install_waybar)" ;;
         wofi)       body="$WOFI_REV $(declare -f install_wofi)" ;;
@@ -538,7 +556,7 @@ verify() {
     local cmd fail=0 fonts path
     fonts="$(fc-list : family)"
     printf '\n  %sResult%s\n' "$C_BOLD" "$C_RESET"
-    for cmd in Hyprland hyprctl uwsm hypridle hyprlock qs waybar wofi matugen hyprshot swaybg cliphist kitty fastfetch nmcli; do
+    for cmd in "${VERIFY_CMDS[@]}"; do
         if path="$(command -v "$cmd")"; then
             printf '  %s✓%s  %-12s %s%s%s\n' "$C_OK" "$C_RESET" "$cmd" "$C_DIM" "$path" "$C_RESET"
         else
@@ -580,6 +598,7 @@ while (( $# )); do
         --theme) THEME="${2:?--theme needs a name}"; shift ;;
         --skip-hyprland) SKIP_HYPRLAND=1 ;;
         --dots-only) DOTS_ONLY=1; SKIP_HYPRLAND=1 ;;
+        --session-only) SESSION_ONLY=1; SKIP_HYPRLAND=1 ;;
         --yes) UI_YES=1 ;;
         --verbose | --full-log) UI_VERBOSE=1 ;;
         -h | --help) usage; exit 0 ;;
@@ -591,8 +610,10 @@ done
 mkdir -p "$BUILD_DIR"
 ui_start "$BUILD_DIR/install-$(date +%F-%H%M%S).log"
 
-ui_banner "Snowflake installer" "Simply beautiful · Hyprland rice for Debian 13"
-if (( DOTS_ONLY )); then
+ui_banner "Snowflake installer" "$BANNER_SUBTITLE"
+if (( SESSION_ONLY )); then
+    ui_summary_row "Mode" "session launcher only (--session-only)"
+elif (( DOTS_ONLY )); then
     ui_summary_row "Mode" "configs, fonts and theme only (--dots-only)"
 elif (( SKIP_HYPRLAND )); then
     ui_summary_row "Will build" "Quickshell 0.3.0 · Waybar 0.15.0 (patched) · wofi · hyprshot"
@@ -601,7 +622,7 @@ else
     ui_summary_row "Will build" "Hyprland 0.55.3 · Quickshell 0.3.0 · Waybar 0.15.0 (patched) · wofi · hyprshot"
 fi
 ui_summary_row "Theme" "$THEME"
-if (( ! DOTS_ONLY )); then
+if (( ! DOTS_ONLY && ! SESSION_ONLY )); then
     if (( SKIP_HYPRLAND )); then
         ui_summary_row "Time" "about 20–40 minutes, mostly compiling"
     else
@@ -616,18 +637,26 @@ fi
 printf '\n'
 ui_sudo_keepalive
 
+if (( SESSION_ONLY )); then
+    phase_add shown "$PHASE_SESSION_LABEL" ensure_uwsm_session
+    phase_run_all
+    print_finish_hint
+    printf '     %sLog: %s%s\n\n' "$C_DIM" "$LOG" "$C_RESET"
+    exit 0
+fi
+
 phase_add shown "System check" preflight
-phase_add shown "APT sources" ensure_deb_src
+phase_add shown "$PHASE_SOURCES_LABEL" ensure_deb_src
 phase_add quiet "System packages" install_packages
 if (( ! DOTS_ONLY )); then
     if (( ! SKIP_HYPRLAND )); then
-        phase_add shown "Hyprland 0.55.3 (Debian-Hyprland)" p_hyprland
+        phase_add shown "$PHASE_HYPRLAND_LABEL" p_hyprland
     fi
     phase_add quiet "Quickshell 0.3.0" p_quickshell
     phase_add quiet "Waybar 0.15.0 + Snowflake patches" p_waybar
     phase_add quiet "wofi" p_wofi
     phase_add quiet "hyprshot" p_hyprshot
-    phase_add shown "Login session (uwsm)" ensure_uwsm_session
+    phase_add shown "$PHASE_SESSION_LABEL" ensure_uwsm_session
     phase_add quiet "hyprlock" use_apt_hyprlock
 fi
 phase_add quiet "matugen $MATUGEN_VERSION" p_matugen
@@ -641,13 +670,27 @@ phase_run_all
 
 if verify; then
     printf '\n  %s%s❄  Snowflake is installed%s  %sin %s%s\n' "$C_BOLD" "$C_ICE" "$C_RESET" "$C_DIM" "$(ui_total_time)" "$C_RESET"
-    printf '     Reboot, then on the login screen pick %sHyprland (uwsm-managed)%s.\n' "$C_BOLD" "$C_RESET"
+    print_finish_hint
 else
     printf '\n  %s%s!  Snowflake is installed with warnings%s  %sin %s%s\n' "$C_BOLD" "$C_WARN" "$C_RESET" "$C_DIM" "$(ui_total_time)" "$C_RESET"
     printf '     See the list above.\n'
 fi
 printf '     %sLog: %s%s\n\n' "$C_DIM" "$LOG" "$C_RESET"
 }
+
+# ------------------------- DISTRO BACKENDS -------------------------
+detect_distro() {
+    local id=""
+    [[ -r /etc/os-release ]] && id="$(. /etc/os-release; printf '%s' "${ID:-}")"
+    case "${SNOWFLAKE_DISTRO:-$id}" in
+        void | voidlinux) DISTRO=void ;;
+        *) DISTRO=debian ;;
+    esac
+}
+detect_distro
+if [[ "$DISTRO" == void ]]; then
+    source "$REPO_DIR/installer/void.sh"
+fi
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     main "$@"
