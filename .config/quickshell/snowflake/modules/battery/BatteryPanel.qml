@@ -62,8 +62,10 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    implicitWidth: 300
-    implicitHeight: 300
+    // ------------------------- UI SCALE -------------------------
+    readonly property real uiScale: UiScale.scaleFor("battery", root.screen, 300, 300)
+    implicitWidth: Math.round(300 * root.uiScale)
+    implicitHeight: Math.round(300 * root.uiScale)
 
     // ---------- COLORS ----------
     readonly property color accentPrimary: Theme.accentPrimary
@@ -147,8 +149,18 @@ PanelWindow {
             root.expanded = true
     }
 
+    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
+    Item {
+        id: scaler
+        width: 300
+        height: 300
+        scale: root.uiScale
+        transformOrigin: Item.TopLeft
+    }
+
     Rectangle {
         id: card
+        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel

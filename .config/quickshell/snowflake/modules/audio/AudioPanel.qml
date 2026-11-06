@@ -95,8 +95,10 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    implicitWidth: 420
-    implicitHeight: 560
+    // ------------------------- UI SCALE -------------------------
+    readonly property real uiScale: UiScale.scaleFor("audio", root.screen, 420, 560)
+    implicitWidth: Math.round(420 * root.uiScale)
+    implicitHeight: Math.round(560 * root.uiScale)
 
     // ------------------------- COLORS -------------------------
 
@@ -1399,8 +1401,18 @@ PanelWindow {
 
     // ------------------------- CARD -------------------------
 
+    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
+    Item {
+        id: scaler
+        width: 420
+        height: 560
+        scale: root.uiScale
+        transformOrigin: Item.TopLeft
+    }
+
     Rectangle {
         id: card
+        parent: scaler
         anchors.fill: parent
         radius: 8
         color: root.bgPanel

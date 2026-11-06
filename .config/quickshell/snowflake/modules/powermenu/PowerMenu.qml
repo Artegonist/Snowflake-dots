@@ -50,8 +50,9 @@ PanelWindow {
     property real animWidth: lineThickness
     property real animHeight: 0
 
-    implicitWidth: fullWidth
-    implicitHeight: fullHeight
+    readonly property real uiScale: UiScale.scaleFor("power", root.screen, root.fullWidth, root.fullHeight)
+    implicitWidth: Math.round(fullWidth * root.uiScale)
+    implicitHeight: Math.round(fullHeight * root.uiScale)
 
     //------------------TOGGLE-----------------------
     function show() { menuVisible = true }
@@ -368,8 +369,17 @@ PanelWindow {
     }
 
     //------------------PANEL-----------------------
+    Item {
+        id: scaler
+        width: root.fullWidth
+        height: root.fullHeight
+        scale: root.uiScale
+        transformOrigin: Item.TopLeft
+    }
+
     Rectangle {
         id: panel
+        parent: scaler
         anchors.top: parent.top
         anchors.right: parent.right
         width: root.animWidth

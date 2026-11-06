@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
+import "../../services"
 
 PanelWindow {
     id: panel
@@ -56,8 +57,10 @@ PanelWindow {
     })
 
     visible: false
-    implicitWidth: 420
-    implicitHeight: 560
+    // ------------------------- UI SCALE -------------------------
+    readonly property real uiScale: UiScale.scaleFor("clipboard", panel.screen, 420, 560)
+    implicitWidth: Math.round(420 * panel.uiScale)
+    implicitHeight: Math.round(560 * panel.uiScale)
     color: "transparent"
 
     anchors {
@@ -522,8 +525,18 @@ PanelWindow {
 
     //--------------------- UI ------------------------
 
+    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
+    Item {
+        id: scaler
+        width: 420
+        height: 560
+        scale: panel.uiScale
+        transformOrigin: Item.TopLeft
+    }
+
     Rectangle {
         id: frame
+        parent: scaler
         anchors.fill: parent
         color: theme.bg_panel
         radius: 8
