@@ -233,6 +233,7 @@ PanelWindow {
 
                 Text {
                     text: root.charging ? "󱐋" : "󱈏"
+                    font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 30
                     color: root.accentPrimary
                     Layout.alignment: Qt.AlignVCenter
