@@ -149,7 +149,6 @@ PanelWindow {
             root.expanded = true
     }
 
-    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
     Item {
         id: scaler
         width: 300
@@ -213,19 +212,30 @@ PanelWindow {
         Keys.onEscapePressed: root.hide()
 
         ColumnLayout {
+            id: col
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 14
+            anchors.leftMargin: 20
+            anchors.rightMargin: 20
+            anchors.topMargin: 25
+            anchors.bottomMargin: 20
+            spacing: Math.max(0, (col.height
+                                  - titleRow.implicitHeight
+                                  - 8
+                                  - timeText.implicitHeight
+                                  - headerText.implicitHeight
+                                  - 34) / 4)
 
             // --- TITLE ---
             RowLayout {
+                id: titleRow
                 Layout.fillWidth: true
                 spacing: 10
 
                 Text {
                     text: root.charging ? "󱐋" : "󱈏"
-                    font.pixelSize: 20
+                    font.pixelSize: 30
                     color: root.accentPrimary
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 Text {
@@ -233,6 +243,7 @@ PanelWindow {
                     color: root.textMain
                     font.pixelSize: 30
                     font.bold: true
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 Item { Layout.fillWidth: true }
@@ -241,7 +252,7 @@ PanelWindow {
             // --- INDICATOR ---
             Rectangle {
                 Layout.fillWidth: true
-                height: 8
+                Layout.preferredHeight: 8
                 radius: 4
                 color: root.bgTrack
 
@@ -258,30 +269,35 @@ PanelWindow {
                 }
             }
 
-            // --- TIME FROM BATTERY---
+            // --- TIME FROM BATTERY ---
             Text {
+                id: timeText
                 Layout.fillWidth: true
                 text: root.timeLabel
                 color: root.textDim
                 font.pixelSize: 13
             }
 
-            // --- DEVIDER ---
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: root.separatorColor
-            }
-
             // --- HEADER OF MODES BLOCK ---
             Text {
+                id: headerText
+                Layout.fillWidth: true
                 text: "Режим питания"
                 color: root.textDim
-                font.pixelSize: 12
+                font.pixelSize: 13
+
+                
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    y: -col.spacing / 2 - 0.5
+                    color: root.separatorColor
+                }
             }
 
             // --- MODES SWITCHER ---
             RowLayout {
+                id: modesRow
                 Layout.fillWidth: true
                 spacing: 8
 
@@ -290,7 +306,7 @@ PanelWindow {
 
                     delegate: Rectangle {
                         Layout.fillWidth: true
-                        height: 34
+                        Layout.preferredHeight: 34
                         radius: 10
 
                         readonly property bool isActive: PowerProfiles.profile === modelData.profile
@@ -319,7 +335,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: modelData.label
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             font.bold: parent.isActive
                             color: parent.isActive ? root.bgPanel : root.textMain
 
