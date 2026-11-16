@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# lyrics.sh TOKEN ARTIST TITLE ALBUM DURATION_SEC URL
-# Ответ: TOKEN <token> / SRC <local|lrclib|none|error> / тело.
-# Python используется и в playbutton.sh; дополнительных Python-пакетов не нужно.
+
 if ! command -v python3 >/dev/null 2>&1; then
     printf 'TOKEN %s\nSRC error\n' "${1:-0}"
     exit 0
