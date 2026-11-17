@@ -224,8 +224,8 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text: row.muted ? "󰝟" : row.icon
-                    font.pixelSize: 13
+                    text: row.muted ? "" : row.icon
+                    font.pixelSize: 22
                     color: (row.muted || muteArea.containsMouse) ? row.root.bgPanel : row.root.textMain
 
                     Behavior on color { ColorAnimation { duration: 150 } }
@@ -880,7 +880,7 @@ PanelWindow {
             Text {
                 text: "Приложения"
                 color: page.root.textDim
-                font.pixelSize: 12
+                font.pixelSize: 13
             }
 
             Flickable {
@@ -912,8 +912,7 @@ PanelWindow {
                         visible: page.root.streamNodes.length === 0
                         text: "Нет активных потоков"
                         color: page.root.textDim
-                        font.pixelSize: 12
-                        font.italic: true
+                        font.pixelSize: 13
                     }
                 }
             }
