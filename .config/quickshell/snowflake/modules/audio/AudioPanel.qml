@@ -663,14 +663,18 @@ PanelWindow {
             anchors.topMargin: 4
             anchors.left: parent.left
             anchors.right: parent.right
-            height: 36
+            height: 34
             topLeftRadius: 6
             topRightRadius: 6
             bottomLeftRadius: selector.open ? 0 : 6
             bottomRightRadius: selector.open ? 0 : 6
             color: selector.root.bgTrack
-            border.width: (headerArea.containsMouse && !selector.open) ? 1 : 0
+            border.width: (headerHover.hovered && !selector.open) ? 2 : 0
             border.color: selector.root.accentPrimary
+
+            HoverHandler {
+                id: headerHover
+            }
 
             RowLayout {
                 anchors.fill: parent
@@ -704,7 +708,6 @@ PanelWindow {
             MouseArea {
                 id: headerArea
                 anchors.fill: parent
-                hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: selector.open = !selector.open
             }
@@ -776,7 +779,7 @@ PanelWindow {
             anchors.bottom: dropdown.bottom
             color: "transparent"
             radius: 6
-            border.width: selector.open ? 1 : 0
+            border.width: selector.open ? 2 : 0
             border.color: selector.root.accentPrimary
             visible: selector.open
         }
