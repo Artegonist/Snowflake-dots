@@ -826,7 +826,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 root: page.root
                 label: "Устройство вывода"
-                fontSize: 13
+                fontSize: 14
                 icon: "󰕾"
                 devices: page.root.outputDevices
                 currentNode: page.root.sinkNode
@@ -838,7 +838,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 root: page.root
                 label: "Устройство ввода"
-                fontSize: 13
+                fontSize: 14
                 icon: "󰍬"
                 devices: page.root.inputDevices
                 currentNode: page.root.sourceNode
