@@ -308,7 +308,7 @@ PanelWindow {
                     delegate: Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 34
-                        radius: 10
+                        radius: 6
 
                         readonly property bool isActive: PowerProfiles.profile === modelData.profile
                         readonly property bool isDisabled: modelData.profile === PowerProfile.Performance
