@@ -14,6 +14,7 @@ PanelWindow {
     focusable: true
     WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
+    // ------------------------- STATE & WINDOW CONTROL -------------------------
     property bool expanded: false
     property bool closing: false
     property string currentTab: "mixer"
@@ -59,6 +60,7 @@ PanelWindow {
             root.show()
     }
 
+    // ------------------------- TIMERS & REGIONS -------------------------
     Timer {
         id: returnToWorkspaceTimer
         interval: 30
@@ -76,6 +78,7 @@ PanelWindow {
         height: 0
     }
 
+    // ------------------------- LAYOUT & SIZE -------------------------
     anchors {
         top: true
         right: true
@@ -94,6 +97,7 @@ PanelWindow {
     implicitWidth: Math.round(420 * root.uiScale)
     implicitHeight: Math.round(560 * root.uiScale)
 
+    // ------------------------- THEME COLORS -------------------------
     readonly property color accentPrimary: Theme.accentPrimary
     readonly property color accentSecondary: Theme.accentSecondary
     readonly property color bgPanel: Theme.bgPanelBattery
@@ -116,6 +120,7 @@ PanelWindow {
             root.expanded = true
     }
 
+    // ------------------------- PIPEWIRE -------------------------
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource, ...root.streamNodes, ...root.outputDevices, ...root.inputDevices]
     }
@@ -191,6 +196,7 @@ PanelWindow {
         return list
     }
 
+    // ------------------------- COMPONENT: VOLUME ROW -------------------------
     component VolumeRow: ColumnLayout {
         id: row
         spacing: 4
@@ -352,6 +358,7 @@ PanelWindow {
         }
     }
 
+    // ------------------------- COMPONENT: BALANCE SLIDER -------------------------
     component BalanceSlider: RowLayout {
         id: balancer
         spacing: 8
@@ -502,6 +509,7 @@ PanelWindow {
         }
     }
 
+    // ------------------------- COMPONENT: EQ BAND SLIDER -------------------------
     component EqBandSlider: ColumnLayout {
         id: bandItem
         spacing: 6
@@ -622,6 +630,7 @@ PanelWindow {
         }
     }
 
+    // ------------------------- COMPONENT: DEVICE SELECTOR -------------------------
     component DeviceSelector: Item {
         id: selector
 
@@ -785,6 +794,7 @@ PanelWindow {
         }
     }
 
+    // ------------------------- PAGE: MIXER -------------------------
     component MixerPage: Item {
         id: page
         property var root
@@ -920,10 +930,12 @@ PanelWindow {
         }
     }
 
+    // ------------------------- PAGE: EQ -------------------------
     component EqPage: Item {
         id: eqPage
         property var root
 
+        // ------------------------- EQ: STATE & PERSISTENCE -------------------------
         readonly property var bandFreqs: [60, 170, 310, 600, 1000, 3000, 6000, 12000]
         readonly property var bandLabels: ["60", "170", "310", "600", "1k", "3k", "6k", "12k"]
         property var bandGains: [0, 0, 0, 0, 0, 0, 0, 0]
@@ -980,6 +992,7 @@ PanelWindow {
             }
         }
 
+        // ------------------------- EQ: PRESETS DATA -------------------------
         readonly property var presets: ({
             "Плоский":  [0, 0, 0, 0, 0, 0, 0, 0],
             "Бас+":     [6, 5, 3, 1, 0, 0, 0, 0],
@@ -991,6 +1004,7 @@ PanelWindow {
             "Классика": [2, 1, 0, 0, 0, 0, 1, 2]
         })
 
+        // ------------------------- EQ: PRESET LOGIC -------------------------
         function applyPreset(name) {
             const values = eqPage.presets[name]
             if (!values) return
@@ -1070,6 +1084,7 @@ PanelWindow {
             onTriggered: eqPage.pushToBackend()
         }
 
+        // ------------------------- EQ: EASYEFFECTS BACKEND -------------------------
         Process {
             id: backendProcess
         }
@@ -1138,10 +1153,12 @@ PanelWindow {
             backendProcess.running = true
         }
 
+        // ------------------------- EQ: UI -------------------------
         ColumnLayout {
             anchors.fill: parent
             spacing: 12
 
+            // ------------------------- PRESETS -------------------------
             Text {
                 text: "Пресеты"
                 color: eqPage.root.textDim
@@ -1196,6 +1213,7 @@ PanelWindow {
                 }
             }
 
+            // ------------------------- CUSTOM PRESETS -------------------------
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
@@ -1291,6 +1309,7 @@ PanelWindow {
                 color: eqPage.root.separatorColor
             }
 
+            // ------------------------- BANDS -------------------------
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: true
@@ -1309,6 +1328,7 @@ PanelWindow {
                 }
             }
 
+            // ------------------------- CONTROLS -------------------------
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
@@ -1381,6 +1401,7 @@ PanelWindow {
         }
     }
 
+    // ------------------------- ROOT UI -------------------------
     Item {
         id: scaler
         width: 420
@@ -1402,6 +1423,7 @@ PanelWindow {
         opacity: 0
         scale: 0.85
 
+        // ------------------------- CARD & ANIMATIONS -------------------------
         SequentialAnimation {
             id: openAnim
 
@@ -1470,6 +1492,7 @@ PanelWindow {
             anchors.rightMargin: 20
             spacing: 14
 
+            // ------------------------- HEADER -------------------------
             ColumnLayout {
                 id: headerSection
                 Layout.fillWidth: true
@@ -1562,6 +1585,7 @@ PanelWindow {
                 }
             }
 
+            // ------------------------- CONTENT -------------------------
             Item {
                 id: contentSection
                 Layout.fillWidth: true
@@ -1597,6 +1621,7 @@ PanelWindow {
             }
         }
 
+        // ------------------------- FORMAT BADGE -------------------------
         Rectangle {
             id: formatBadge
             visible: root.sinkFormatLabel !== ""
