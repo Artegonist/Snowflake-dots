@@ -214,9 +214,7 @@ PanelWindow {
                 width: 34
                 height: 34
                 radius: 10
-                color: row.muted ? row.root.danger
-                     : muteArea.containsMouse ? row.root.accentPrimary
-                     : Qt.rgba(1, 1, 1, 0.06)
+                color: row.muted ? row.root.danger : row.root.accentPrimary
                 scale: muteArea.pressed ? 0.85 : 1.0
 
                 Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutCubic } }
@@ -226,7 +224,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     text: row.muted ? "" : row.icon
                     font.pixelSize: 22
-                    color: (row.muted || muteArea.containsMouse) ? row.root.bgPanel : row.root.textMain
+                    color: row.root.bgPanel
 
                     Behavior on color { ColorAnimation { duration: 150 } }
                 }
