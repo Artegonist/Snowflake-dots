@@ -1461,7 +1461,10 @@ PanelWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20
+            anchors.topMargin: 25
+            anchors.bottomMargin: 20
+            anchors.leftMargin: 20
+            anchors.rightMargin: 20
             spacing: 14
 
             ColumnLayout {
