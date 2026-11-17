@@ -44,8 +44,6 @@ window#waybar {
     transition: all 0.2s ease;
 }
 
-/* ---------- Clock ---------- */
-
 #clock,
 #network,
 #pulseaudio {
