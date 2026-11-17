@@ -14,14 +14,10 @@ PanelWindow {
     focusable: true
     WlrLayershell.keyboardFocus: root.expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
-    // ------------------------- STATE -------------------------
-
     property bool expanded: false
     property bool closing: false
-    property string currentTab: "mixer" // "mixer" | "eq"
+    property string currentTab: "mixer"
     property int savedWorkspaceId: -1
-
-    // ------------------------- OPEN / CLOSE -------------------------
 
     function show() {
         root.closing = false
@@ -80,8 +76,6 @@ PanelWindow {
         height: 0
     }
 
-    // ------------------------- WINDOW GEOMETRY -------------------------
-
     anchors {
         top: true
         right: true
@@ -95,12 +89,10 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    // ------------------------- UI SCALE -------------------------
+
     readonly property real uiScale: UiScale.scaleFor("audio", root.screen, 420, 560)
     implicitWidth: Math.round(420 * root.uiScale)
     implicitHeight: Math.round(560 * root.uiScale)
-
-    // ------------------------- COLORS -------------------------
 
     readonly property color accentPrimary: Theme.accentPrimary
     readonly property color accentSecondary: Theme.accentSecondary
@@ -119,13 +111,10 @@ PanelWindow {
         onCleared: root.closeInternal(false)
     }
 
-
     onVisibleChanged: {
         if (visible && !root.expanded)
             root.expanded = true
     }
-
-    // ------------------------- PIPEWIRE -------------------------
 
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource, ...root.streamNodes, ...root.outputDevices, ...root.inputDevices]
@@ -202,8 +191,6 @@ PanelWindow {
         return list
     }
 
-    // ------------------------- SLIDER 1 -------------------------
-
     component VolumeRow: ColumnLayout {
         id: row
         spacing: 4
@@ -226,7 +213,7 @@ PanelWindow {
                 id: muteBtn
                 width: 24
                 height: 24
-                radius: 6
+                radius: 10
                 color: row.muted ? row.root.danger
                      : muteArea.containsMouse ? row.root.accentPrimary
                      : Qt.rgba(1, 1, 1, 0.06)
@@ -367,8 +354,6 @@ PanelWindow {
         }
     }
 
-    // ------------------------- SLIDER 2 -------------------------
-
     component BalanceSlider: RowLayout {
         id: balancer
         spacing: 8
@@ -404,7 +389,7 @@ PanelWindow {
 
         Text {
             text: "L"
-            font.pixelSize: 12
+            font.pixelSize: 13
             font.bold: balancer.balance < -0.05
             color: balancer.balance < -0.05 ? balancer.root.accentPrimary : balancer.root.textDim
         }
@@ -513,13 +498,11 @@ PanelWindow {
 
         Text {
             text: "R"
-            font.pixelSize: 12
+            font.pixelSize: 13
             font.bold: balancer.balance > 0.05
             color: balancer.balance > 0.05 ? balancer.root.accentPrimary : balancer.root.textDim
         }
     }
-
-    // ------------------------- SLIDER 3 -------------------------
 
     component EqBandSlider: ColumnLayout {
         id: bandItem
@@ -649,6 +632,7 @@ PanelWindow {
         property string icon: "󰕾"
         property var devices: []
         property var currentNode: null
+        property int fontSize: 14
 
         signal deviceSelected(var node)
 
@@ -672,7 +656,7 @@ PanelWindow {
             anchors.left: parent.left
             text: selector.label
             color: selector.root.textDim
-            font.pixelSize: 11
+            font.pixelSize: selector.fontSize - 2
         }
 
         Rectangle {
@@ -681,7 +665,7 @@ PanelWindow {
             anchors.topMargin: 4
             anchors.left: parent.left
             anchors.right: parent.right
-            height: 32
+            height: 36
             topLeftRadius: 6
             topRightRadius: 6
             bottomLeftRadius: selector.open ? 0 : 6
@@ -699,7 +683,7 @@ PanelWindow {
                 Text {
                     text: selector.icon
                     color: selector.root.accentPrimary
-                    font.pixelSize: 13
+                    font.pixelSize: selector.fontSize + 1
                 }
 
                 Text {
@@ -708,14 +692,14 @@ PanelWindow {
                         ? (selector.currentNode.nickname || selector.currentNode.description || selector.currentNode.name)
                         : "Устройство не выбрано"
                     color: selector.root.textMain
-                    font.pixelSize: 12
+                    font.pixelSize: selector.fontSize
                     elide: Text.ElideRight
                 }
 
                 Text {
                     text: selector.open ? "\u25B4" : "\u25BE"
                     color: selector.root.textDim
-                    font.pixelSize: 10
+                    font.pixelSize: selector.fontSize - 3
                 }
             }
 
@@ -752,7 +736,7 @@ PanelWindow {
 
                 delegate: Rectangle {
                     width: list.width
-                    height: 30
+                    height: 34
 
                     readonly property bool isCurrent: selector.currentNode && modelData.id === selector.currentNode.id
 
@@ -768,7 +752,7 @@ PanelWindow {
                         verticalAlignment: Text.AlignVCenter
                         text: modelData.nickname || modelData.description || modelData.name
                         color: parent.isCurrent ? selector.root.accentPrimary : selector.root.textMain
-                        font.pixelSize: 12
+                        font.pixelSize: selector.fontSize
                         font.bold: parent.isCurrent
                         elide: Text.ElideRight
                     }
@@ -799,8 +783,6 @@ PanelWindow {
             visible: selector.open
         }
     }
-
-    // ------------------------- MIXER -------------------------
 
     component MixerPage: Item {
         id: page
@@ -833,6 +815,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 root: page.root
                 label: "Устройство вывода"
+                fontSize: 13
                 icon: "󰕾"
                 devices: page.root.outputDevices
                 currentNode: page.root.sinkNode
@@ -844,6 +827,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 root: page.root
                 label: "Устройство ввода"
+                fontSize: 13
                 icon: "󰍬"
                 devices: page.root.inputDevices
                 currentNode: page.root.sourceNode
@@ -935,8 +919,6 @@ PanelWindow {
             }
         }
     }
-
-    // ------------------------- EQ -------------------------
 
     component EqPage: Item {
         id: eqPage
@@ -1163,7 +1145,7 @@ PanelWindow {
             Text {
                 text: "Пресеты"
                 color: eqPage.root.textDim
-                font.pixelSize: 12
+                font.pixelSize: 13
             }
 
             GridLayout {
@@ -1197,7 +1179,7 @@ PanelWindow {
                             id: chipText
                             anchors.centerIn: parent
                             text: chip.presetName
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             color: chip.active ? eqPage.root.bgPanel : eqPage.root.textMain
                         }
 
@@ -1254,7 +1236,7 @@ PanelWindow {
                             anchors.centerIn: parent
                             visible: !customChip.editing
                             text: eqPage.customPresetName(customChip.index)
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             color: customChip.active ? eqPage.root.bgPanel : eqPage.root.textMain
                         }
 
@@ -1263,7 +1245,7 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: parent.width - 10
                             visible: customChip.editing
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             color: customChip.active ? eqPage.root.bgPanel : eqPage.root.textMain
                             horizontalAlignment: TextInput.AlignHCenter
                             clip: true
@@ -1399,9 +1381,6 @@ PanelWindow {
         }
     }
 
-    // ------------------------- CARD -------------------------
-
-    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
     Item {
         id: scaler
         width: 420
@@ -1488,8 +1467,6 @@ PanelWindow {
             anchors.margins: 20
             spacing: 14
 
-            // ------------------------- HEADER -------------------------
-
             ColumnLayout {
                 id: headerSection
                 Layout.fillWidth: true
@@ -1537,7 +1514,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "Микшер"
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             font.bold: root.currentTab === "mixer"
                             color: root.currentTab === "mixer" ? root.bgPanel : root.textDim
                         }
@@ -1566,7 +1543,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "Эквалайзер"
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             font.bold: root.currentTab === "eq"
                             color: root.currentTab === "eq" ? root.bgPanel : root.textDim
                         }
@@ -1581,8 +1558,6 @@ PanelWindow {
                     }
                 }
             }
-
-            // ------------------------- PAGES -------------------------
 
             Item {
                 id: contentSection
@@ -1618,8 +1593,6 @@ PanelWindow {
                 }
             }
         }
-
-        // ------------------------- FORMAT BADGE -------------------------
 
         Rectangle {
             id: formatBadge
