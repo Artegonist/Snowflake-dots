@@ -211,8 +211,8 @@ PanelWindow {
 
             Rectangle {
                 id: muteBtn
-                width: 24
-                height: 24
+                width: 34
+                height: 34
                 radius: 10
                 color: row.muted ? row.root.danger
                      : muteArea.containsMouse ? row.root.accentPrimary
@@ -252,9 +252,9 @@ PanelWindow {
             }
 
             Text {
-                text: row.muted ? "выкл" : Math.round(row.frac * 100) + "%"
+                text: row.muted ? "Выкл" : Math.round(row.frac * 100) + "%"
                 color: row.root.textDim
-                font.pixelSize: 12
+                font.pixelSize: 13
             }
         }
 
@@ -1502,7 +1502,7 @@ PanelWindow {
                     Rectangle {
                         id: mixerTab
                         Layout.fillWidth: true
-                        height: 30
+                        height: 34
                         radius: 6
                         color: root.currentTab === "mixer" ? root.accentPrimary
                              : mixerTabArea.containsMouse ? root.accentSecondary
@@ -1531,7 +1531,7 @@ PanelWindow {
                     Rectangle {
                         id: eqTab
                         Layout.fillWidth: true
-                        height: 30
+                        height: 34
                         radius: 6
                         color: root.currentTab === "eq" ? root.accentPrimary
                              : eqTabArea.containsMouse ? root.accentSecondary
