@@ -447,10 +447,10 @@ PanelWindow {
     }
 
     function statusLabel(device) {
-        if (device.pairing) return "сопряжение…"
-        if (device.connected) return "подключено"
-        if (device.paired) return "сопряжено"
-        return "доступно"
+        if (device.pairing) return "Сопряжениe"
+        if (device.connected) return "Подключено"
+        if (device.paired) return "Сопряжено"
+        return "Доступно"
     }
 
     //----------------REACTIVE----------------
@@ -610,7 +610,6 @@ PanelWindow {
     }
 
     //----------------LAYOUT----------------
-    // Всё содержимое рисуется в эталонном размере и масштабируется целиком
     Item {
         id: scaler
         width: 380
@@ -713,8 +712,11 @@ PanelWindow {
         //----------------CONTENT----------------
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 24
-            spacing: 14
+            anchors.topMargin: 25
+            anchors.bottomMargin: 20
+            anchors.leftMargin: 20
+            anchors.rightMargin: 20
+            spacing: 8
             visible: root.btEnabled
 
             //----------------HEADER----------------
@@ -999,7 +1001,7 @@ PanelWindow {
                                     Rectangle {
                                         implicitWidth: connectedBlock.actionButtonWidth
                                         height: 28
-                                        radius: 10
+                                        radius: 6
                                         color: disconnectArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                                : disconnectArea.containsMouse ? root.accentSecondary : root.accentPrimary
                                         scale: disconnectArea.pressed ? 0.95 : 1.0
@@ -1012,7 +1014,7 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             text: "Отключить"
                                             color: root.bgPanel
-                                            font.pixelSize: 12
+                                            font.pixelSize: 13
                                         }
 
                                         MouseArea {
@@ -1027,7 +1029,7 @@ PanelWindow {
                                     Rectangle {
                                         implicitWidth: connectedBlock.actionButtonWidth
                                         height: 28
-                                        radius: 10
+                                        radius: 6
                                         color: forgetArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                                : forgetArea.containsMouse ? root.accentSecondary : root.accentPrimary
                                         scale: forgetArea.pressed ? 0.95 : 1.0
@@ -1040,7 +1042,7 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             text: "Забыть"
                                             color: root.bgPanel
-                                            font.pixelSize: 12
+                                            font.pixelSize: 13
                                         }
 
                                         MouseArea {
@@ -1081,9 +1083,9 @@ PanelWindow {
 
                     Rectangle {
                         id: refreshButton
-                        width: 30
-                        height: 30
-                        radius: 15
+                        width: 34
+                        height: 34
+                        radius: 17
                         color: refreshArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                : refreshArea.containsMouse ? root.accentSecondary : root.accentPrimary
                         scale: refreshArea.pressed ? 0.88 : 1.0
@@ -1122,7 +1124,7 @@ PanelWindow {
                     Text {
                         text: "Устройства"
                         color: root.textDim
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                     }
                 }
 
@@ -1131,7 +1133,7 @@ PanelWindow {
                     visible: root.errorText !== ""
                     text: root.errorText
                     color: root.accentText
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     wrapMode: Text.WordWrap
                 }
             }
@@ -1204,7 +1206,7 @@ PanelWindow {
                                     enabled: root.btEnabled && !root.isBusy(deviceRow.device.dbusPath)
                                     implicitWidth: forgetDeviceLabel.implicitWidth + 14
                                     height: 24
-                                    radius: 8
+                                    radius: 6
                                     color: forgetDeviceArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                            : forgetDeviceArea.containsMouse ? root.accentSecondary : root.accentPrimary
                                     opacity: enabled ? 1 : 0.55
@@ -1219,7 +1221,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         text: "Забыть"
                                         color: root.bgPanel
-                                        font.pixelSize: 11
+                                        font.pixelSize: 13
                                     }
 
                                     MouseArea {
@@ -1410,7 +1412,7 @@ PanelWindow {
                         target: btToggleButton
                         width: 120
                         height: 120
-                        radius: 28
+                        radius: 10
                     }
                 },
                 State {
@@ -1424,9 +1426,9 @@ PanelWindow {
                     }
                     PropertyChanges {
                         target: btToggleButton
-                        width: 36
-                        height: 36
-                        radius: 10
+                        width: 34
+                        height: 34
+                        radius: 6
                         anchors.topMargin: 24
                         anchors.leftMargin: 24
                     }
@@ -1787,7 +1789,7 @@ PanelWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             height: 34
-                            radius: 12
+                            radius: 10
                             color: settingsForgetArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                    : settingsForgetArea.containsMouse ? root.accentSecondary : root.accentPrimary
                             scale: settingsForgetArea.pressed ? 0.96 : 1.0
@@ -1799,7 +1801,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: "Забыть"
                                 color: root.bgPanel
-                                font.pixelSize: 12
+                                font.pixelSize: 13
                             }
 
                             MouseArea {
