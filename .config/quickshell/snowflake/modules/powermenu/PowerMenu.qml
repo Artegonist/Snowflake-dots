@@ -276,7 +276,7 @@ PanelWindow {
         Layout.preferredHeight: 52
 
         scale: 0
-        radius: 10
+        radius: 6
         border.width: mouseArea.pressed ? 2 : 1
         border.color: root.accentSecondary
         color: mouseArea.pressed ? root.bgPanel : (mouseArea.containsMouse ? root.accentSecondary : root.accentPrimary)
