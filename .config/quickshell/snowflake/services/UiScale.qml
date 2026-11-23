@@ -4,18 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Единая шкала масштаба интерфейса для всех окон Snowflake.
-//
-// Алгоритм (см. scaleFor):
-//   1. База: размер экрана в логических пикселях (после масштаба Hyprland) сравнивается с эталоном 1920x1080:
-//        k    = min(width / 1920, height / 1080)
-//        auto = clamp(k ^ 0.85, 0.65, 2.0)
-//      Степень < 1 сглаживает крайности: на маленьких экранах интерфейс не становится нечитаемо мелким,
-//      на больших не раздувается сверх меры.
-//   2. Ручная настройка: общий масштаб (0 = авто) и отдельный множитель для каждого окна.
-//   3. Предохранитель: итог никогда не больше, чем влезает в экран, поэтому окно не вылезет за край.
-//
-// Настройки хранятся в ~/.local/share/snowflake/hub/ui.json: { "scale": 0, "panels": { "audio": 1.1 } }
 Singleton {
     id: root
 
@@ -32,7 +20,6 @@ Singleton {
     readonly property real edgeMargin: 16
     readonly property real topReserve: 40
 
-    // Окна, у которых есть отдельный множитель: { id, название }
     readonly property var panelList: [
         { id: "hub",       title: "Хаб" },
         { id: "audio",     title: "Звук" },
@@ -49,12 +36,9 @@ Singleton {
     ]
 
     // ------------------------- STATE -------------------------
-    // 0 = автоматически по размеру экрана
     property real userScale: 0
     property var panels: ({})
 
-    // Если qs запущен с QT_SCALE_FACTOR, Qt уже умножил всё на этот коэффициент.
-    // Учитываем его, чтобы масштаб не применялся дважды.
     readonly property real qtFactor: {
         const v = parseFloat(Quickshell.env("QT_SCALE_FACTOR") || "")
         return v > 0 ? v : 1
@@ -65,7 +49,6 @@ Singleton {
         return Math.max(lo, Math.min(hi, v))
     }
 
-    // Размер экрана в логических пикселях компоситора
     function logicalSize(screen) {
         const s = screen ? screen : (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
         if (!s || !(s.width > 0) || !(s.height > 0))
@@ -84,7 +67,6 @@ Singleton {
         return (typeof v === "number" && v > 0) ? root.clamp(v, root.manualMin, root.manualMax) : 1
     }
 
-    // Итоговый масштаб окна размером baseW x baseH (в «эталонных» пикселях)
     function scaleFor(key, screen, baseW, baseH) {
         const sz = root.logicalSize(screen)
         const wanted = (root.userScale > 0 ? root.userScale : root.autoScale(screen)) * root.panelMultiplier(key)
@@ -93,7 +75,6 @@ Singleton {
         return Math.round(s * 100) / 100 / root.qtFactor
     }
 
-    // Для окон настроек: «базовый» масштаб без множителей окон
     function baseScale(screen) {
         return root.userScale > 0 ? root.userScale : root.autoScale(screen)
     }
