@@ -1000,7 +1000,7 @@ PanelWindow {
 
                                     Rectangle {
                                         implicitWidth: connectedBlock.actionButtonWidth
-                                        height: 28
+                                        height: 34
                                         radius: 6
                                         color: disconnectArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                                : disconnectArea.containsMouse ? root.accentSecondary : root.accentPrimary
@@ -1028,7 +1028,7 @@ PanelWindow {
 
                                     Rectangle {
                                         implicitWidth: connectedBlock.actionButtonWidth
-                                        height: 28
+                                        height: 34
                                         radius: 6
                                         color: forgetArea.pressed ? Qt.darker(root.accentPrimary, 1.2)
                                                : forgetArea.containsMouse ? root.accentSecondary : root.accentPrimary
@@ -1124,7 +1124,7 @@ PanelWindow {
                     Text {
                         text: "Устройства"
                         color: root.textDim
-                        font.pixelSize: 13
+                        font.pixelSize: 15
                     }
                 }
 
@@ -1179,7 +1179,7 @@ PanelWindow {
                             required property var device
                             Layout.fillWidth: true
                             height: 48
-                            radius: 12
+                            radius: 6
                             color: (devArea.containsMouse || forgetDeviceArea.containsMouse) ? root.bgTrack : "transparent"
                             scale: devArea.pressed ? 0.98 : 1.0
 
@@ -1193,12 +1193,6 @@ PanelWindow {
                                 anchors.rightMargin: 10
                                 spacing: 10
 
-                                Text {
-                                    visible: root.isBusy(deviceRow.device.dbusPath) || deviceRow.device.pairing
-                                    text: "…"
-                                    font.pixelSize: 14
-                                    color: root.accentPrimary
-                                }
 
                                 Rectangle {
                                     id: forgetDeviceButton
@@ -1249,7 +1243,7 @@ PanelWindow {
                                     Text {
                                         text: deviceRow.device.name
                                         color: root.textMain
-                                        font.pixelSize: 13
+                                        font.pixelSize: 15
                                         elide: Text.ElideRight
                                         horizontalAlignment: Text.AlignRight
                                         Layout.fillWidth: true
@@ -1282,7 +1276,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         visible: parent.iconPath === ""
                                         text: root.fallbackGlyph(deviceRow.device.icon)
-                                        font.pixelSize: 13
+                                        font.pixelSize: 15
                                         color: root.textDim
                                     }
 
@@ -1330,11 +1324,10 @@ PanelWindow {
 
                     Text {
                         Layout.fillWidth: true
-                        Layout.rightMargin: 10
                         visible: savedDeviceModel.count > 0
                         text: "Сохранённые"
                         color: root.textDim
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignRight
                     }
@@ -1355,11 +1348,10 @@ PanelWindow {
 
                     Text {
                         Layout.fillWidth: true
-                        Layout.rightMargin: 10
                         visible: newDeviceModel.count > 0
                         text: "Новые"
                         color: root.textDim
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignRight
                     }
@@ -1375,7 +1367,7 @@ PanelWindow {
                         visible: savedDeviceModel.count === 0 && newDeviceModel.count === 0 && !root.scanning
                         text: "Устройства не найдены"
                         color: root.textDim
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         horizontalAlignment: Text.AlignHCenter
                     }
                 }
