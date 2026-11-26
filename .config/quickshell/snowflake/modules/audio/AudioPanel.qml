@@ -228,7 +228,7 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text: row.muted ? "" : row.icon
+                    text: row.muted ? "" : row.icon
                     font.pixelSize: 22
                     color: row.root.bgPanel
 
@@ -1180,8 +1180,8 @@ PanelWindow {
                         property string presetName: modelData
                         property bool active: eqPage.activePreset === presetName
                         property bool hovered: false
-                        radius: 8
-                        height: 32
+                        radius: 6
+                        height: 34
                         color: chip.active ? eqPage.root.accentPrimary
                              : chip.hovered ? eqPage.root.bgTrack
                              : Qt.darker(eqPage.root.bgTrack, 1.08)
@@ -1216,6 +1216,7 @@ PanelWindow {
             // ------------------------- CUSTOM PRESETS -------------------------
             RowLayout {
                 Layout.fillWidth: true
+                Layout.topMargin: 6
                 spacing: 8
 
                 Repeater {
@@ -1229,8 +1230,8 @@ PanelWindow {
                         property bool hovered: false
                         property bool editing: false
                         Layout.fillWidth: true
-                        radius: 8
-                        height: 32
+                        radius: 6
+                        height: 34
                         color: customChip.active ? eqPage.root.accentPrimary
                              : customChip.hovered ? eqPage.root.bgTrack
                              : Qt.darker(eqPage.root.bgTrack, 1.08)
@@ -1333,11 +1334,13 @@ PanelWindow {
                 Layout.fillWidth: true
                 spacing: 8
 
+                transform: Translate { y: -20 }
+
                 Rectangle {
                     id: resetToggle
-                    Layout.preferredWidth: 32
-                    Layout.preferredHeight: 32
-                    radius: 8
+                    Layout.preferredWidth: 34
+                    Layout.preferredHeight: 34
+                    radius: 6
                     color: resetArea.pressed ? eqPage.root.accentPrimary
                          : resetArea.containsMouse ? eqPage.root.bgTrack
                          : Qt.darker(eqPage.root.bgTrack, 1.08)
@@ -1368,9 +1371,9 @@ PanelWindow {
 
                 Rectangle {
                     id: saveToggle
-                    Layout.preferredWidth: 32
-                    Layout.preferredHeight: 32
-                    radius: 8
+                    Layout.preferredWidth: 34
+                    Layout.preferredHeight: 34
+                    radius: 6
                     color: eqPage.saveMode ? eqPage.root.accentPrimary
                          : saveArea.containsMouse ? eqPage.root.bgTrack
                          : Qt.darker(eqPage.root.bgTrack, 1.08)
@@ -1383,7 +1386,7 @@ PanelWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "\u{1F4BE}"
+                        text: ""
                         font.pixelSize: 14
                         color: eqPage.saveMode ? eqPage.root.bgPanel : eqPage.root.textMain
                     }
