@@ -202,7 +202,7 @@ PanelWindow {
         spacing: 4
 
         property var root
-        property string label: ""
+        property string label: ""
         property string icon: "󰕾"
         property var audio: null
 
@@ -228,7 +228,7 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text: row.muted ? "" : row.icon
+                    text: row.muted ? "" : row.icon
                     font.pixelSize: 22
                     color: row.root.bgPanel
 
