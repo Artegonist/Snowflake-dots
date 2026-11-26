@@ -202,7 +202,7 @@ PanelWindow {
         spacing: 4
 
         property var root
-        property string label: ""
+        property string label: ""
         property string icon: "󰕾"
         property var audio: null
 
@@ -219,7 +219,7 @@ PanelWindow {
                 id: muteBtn
                 width: 34
                 height: 34
-                radius: 10
+                radius: 6
                 color: row.muted ? row.root.danger : row.root.accentPrimary
                 scale: muteArea.pressed ? 0.85 : 1.0
 
